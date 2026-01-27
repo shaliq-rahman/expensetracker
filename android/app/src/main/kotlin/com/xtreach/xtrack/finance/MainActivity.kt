@@ -1,4 +1,4 @@
-package com.example.expense_tracker
+package com.xtreach.xtrack.finance
 
 import io.flutter.embedding.android.FlutterActivity
 
