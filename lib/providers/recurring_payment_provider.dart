@@ -51,6 +51,23 @@ class RecurringPaymentProvider with ChangeNotifier {
     }
   }
 
+  Future<void> updatePayment(RecurringPayment payment) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('recurring_payments')
+          .doc(payment.id)
+          .update(payment.toMap());
+    } catch (e) {
+      print('Error updating recurring payment: $e');
+      rethrow;
+    }
+  }
+
   Future<void> deletePayment(String id) async {
     final user = _auth.currentUser;
     if (user == null) return;

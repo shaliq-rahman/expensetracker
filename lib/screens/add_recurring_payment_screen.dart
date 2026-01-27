@@ -13,7 +13,9 @@ import 'package:expense_tracker/widgets/fade_in_slide.dart';
 import 'package:expense_tracker/widgets/scale_button.dart';
 
 class AddRecurringPaymentScreen extends StatefulWidget {
-  const AddRecurringPaymentScreen({super.key});
+  final RecurringPayment? payment;
+
+  const AddRecurringPaymentScreen({super.key, this.payment});
 
   @override
   State<AddRecurringPaymentScreen> createState() => _AddRecurringPaymentScreenState();
@@ -30,6 +32,21 @@ class _AddRecurringPaymentScreenState extends State<AddRecurringPaymentScreen> {
   DateTime _paymentDate = DateTime.now(); // We'll extract the day from this
   ExpenseCategory _selectedCategory = ExpenseCategory.emi;
   bool _isCurrentMonthCleared = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.payment != null) {
+      final payment = widget.payment!;
+      _titleController.text = payment.title;
+      _amountController.text = _amountFormat.format(payment.amount);
+      _tenureController.text = payment.remainingTenure.toString();
+      _startDate = payment.date;
+      _paymentDate = payment.paymentDate;
+      _selectedCategory = payment.category;
+      _isCurrentMonthCleared = payment.isCurrentMonthCleared;
+    }
+  }
 
   void _onAmountChanged(String value) {
       if (value.isEmpty) return;
@@ -49,7 +66,7 @@ class _AddRecurringPaymentScreenState extends State<AddRecurringPaymentScreen> {
   void _presentStartDatePicker() {
     showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: _startDate,
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
       builder: (context, child) {
@@ -75,7 +92,7 @@ class _AddRecurringPaymentScreenState extends State<AddRecurringPaymentScreen> {
       // Using standard date picker for simplicity, but we only care about the day.
        showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: _paymentDate,
       firstDate: DateTime(DateTime.now().year, DateTime.now().month, 1),
       lastDate: DateTime(DateTime.now().year, DateTime.now().month + 1, 0), // End of current month
       helpText: 'SELECT PAYMENT DAY',
@@ -117,17 +134,21 @@ class _AddRecurringPaymentScreenState extends State<AddRecurringPaymentScreen> {
         : enteredTitle;
 
     final newPayment = RecurringPayment(
-      id: const Uuid().v4(),
+      id: widget.payment?.id ?? const Uuid().v4(),
       title: capitalizedTitle,
       amount: enteredAmount,
       category: _selectedCategory,
       date: _startDate,
       remainingTenure: enteredTenure,
-      lastPaymentDate: _isCurrentMonthCleared ? DateTime.now() : null,
+      lastPaymentDate: _isCurrentMonthCleared ? DateTime.now() : widget.payment?.lastPaymentDate, // Keep old lastPaymentDate if not toggled, or update if toggled
       paymentDate: _paymentDate,
     );
 
-    Provider.of<RecurringPaymentProvider>(context, listen: false).addPayment(newPayment);
+    if (widget.payment != null) {
+      Provider.of<RecurringPaymentProvider>(context, listen: false).updatePayment(newPayment);
+    } else {
+      Provider.of<RecurringPaymentProvider>(context, listen: false).addPayment(newPayment);
+    }
     
     Navigator.of(context).pop();
   }

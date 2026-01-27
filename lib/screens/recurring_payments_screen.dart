@@ -9,6 +9,7 @@ import 'package:expense_tracker/widgets/gradient_background.dart';
 
 import 'package:expense_tracker/widgets/fade_in_slide.dart';
 import 'package:expense_tracker/widgets/scale_button.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 
 class RecurringPaymentsScreen extends StatefulWidget {
   const RecurringPaymentsScreen({super.key});
@@ -174,144 +175,165 @@ class _RecurringPaymentsScreenState extends State<RecurringPaymentsScreen> {
     final isDark = theme.brightness == Brightness.dark;
     final currencyFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
 
-    return Dismissible(
-      key: Key(payment.id),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        decoration: BoxDecoration(
-          color: Colors.red,
-          borderRadius: BorderRadius.circular(24),
-        ),
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        child: const Icon(Icons.delete, color: Colors.white),
-      ),
-      confirmDismiss: (direction) async {
-        return await showDialog(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('Are you sure?'),
-            content: const Text('Do you want to remove this recurring payment?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(false),
-                child: const Text('No'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(true),
-                child: const Text('Yes'),
-              ),
-            ],
-          ),
-        );
-      },
-      onDismissed: (direction) {
-        provider.deletePayment(payment.id);
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: theme.cardTheme.color ?? theme.cardColor,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Slidable(
+        key: Key(payment.id),
+        endActionPane: ActionPane(
+          motion: const ScrollMotion(),
+          extentRatio: 0.5,
+          children: [
+            SlidableAction(
+              onPressed: (context) {
+                 Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => AddRecurringPaymentScreen(payment: payment),
+                  ),
+                );
+              },
+              backgroundColor: Colors.blueAccent, // Solid Blue
+              foregroundColor: Colors.white,
+              icon: Icons.edit,
+              label: 'Edit',
+              borderRadius: const BorderRadius.horizontal(left: Radius.circular(24)),
+            ),
+            SlidableAction(
+              onPressed: (context) {
+                showDialog(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Delete Recurring Payment?'),
+                      content: const Text('Are you sure you want to delete this recurring payment?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(ctx).pop(),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(ctx).pop();
+                            provider.deletePayment(payment.id);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Recurring payment deleted')),
+                            );
+                          },
+                          child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                        ),
+                      ],
+                    ),
+                  );
+              },
+              backgroundColor: const Color(0xFFFE4A49), // Solid Red
+              foregroundColor: Colors.white,
+              icon: Icons.delete,
+              label: 'Delete',
+              borderRadius: const BorderRadius.horizontal(right: Radius.circular(24)),
             ),
           ],
         ),
-        child: Column(
-          children: [
-            Row(
-              children: [
-               Container(
-                  width: 70, 
-                  height: 70,
-                  padding: const EdgeInsets.all(8),
-                  decoration: const BoxDecoration(
-                    color: Colors.transparent, 
-                    shape: BoxShape.circle,
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: theme.cardTheme.color ?? theme.cardColor,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                 Container(
+                    width: 70, 
+                    height: 70,
+                    padding: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(
+                      color: Colors.transparent, 
+                      shape: BoxShape.circle,
+                    ),
+                    child: Image.asset(
+                      payment.category.iconPath,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Icon(Icons.category, color: isDark ? Colors.white : Colors.black, size: 24);
+                      },
+                    ),
                   ),
-                  child: Image.asset(
-                    payment.category.iconPath,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Icon(Icons.category, color: isDark ? Colors.white : Colors.black, size: 24);
-                    },
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          payment.title,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Next: ${DateFormat('d MMM').format(DateTime(
+                              DateTime.now().year, 
+                              DateTime.now().month, 
+                              payment.paymentDate.day
+                          ))}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        payment.title,
+                        currencyFormat.format(payment.amount),
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
+                          color: isDark ? theme.colorScheme.primary : Colors.black,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Next: ${DateFormat('d MMM').format(DateTime(
-                            DateTime.now().year, 
-                            DateTime.now().month, 
-                            payment.paymentDate.day
-                        ))}',
+                        '${payment.remainingTenure} months left', // Simple logic, might need refinement based on start date
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: Colors.grey,
+                          fontSize: 10
                         ),
                       ),
                     ],
                   ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      currencyFormat.format(payment.amount),
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? theme.colorScheme.primary : Colors.black,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${payment.remainingTenure} months left', // Simple logic, might need refinement based on start date
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.grey,
-                        fontSize: 10
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Divider(color: Colors.grey.withOpacity(0.2)),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Current Month Cleared',
-                  style: theme.textTheme.bodyMedium,
-                ),
-                Switch(
-                  value: payment.isCurrentMonthCleared,
-                  activeColor: isDark ? theme.colorScheme.primary : Colors.black,
-                  activeTrackColor: isDark ? theme.colorScheme.primary.withOpacity(0.5) : Colors.black.withOpacity(0.1),
-                  inactiveThumbColor: Colors.grey,
-                  inactiveTrackColor: Colors.grey.withOpacity(0.3),
-                  onChanged: (val) {
-                    provider.toggleCurrentMonthCleared(payment.id, val);
-                  },
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+              const SizedBox(height: 16),
+              Divider(color: Colors.grey.withOpacity(0.2)),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Current Month Cleared',
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                  Switch(
+                    value: payment.isCurrentMonthCleared,
+                    activeColor: isDark ? theme.colorScheme.primary : Colors.black,
+                    activeTrackColor: isDark ? theme.colorScheme.primary.withOpacity(0.5) : Colors.black.withOpacity(0.1),
+                    inactiveThumbColor: Colors.grey,
+                    inactiveTrackColor: Colors.grey.withOpacity(0.3),
+                    onChanged: (val) {
+                      provider.toggleCurrentMonthCleared(payment.id, val);
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

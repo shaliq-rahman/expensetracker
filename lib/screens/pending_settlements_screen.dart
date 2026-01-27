@@ -189,22 +189,43 @@ class _PendingSettlementsScreenState extends State<PendingSettlementsScreen> {
                   ),
                 );
               },
-              backgroundColor: Colors.transparent,
-              foregroundColor: Colors.blueAccent,
+              backgroundColor: Colors.blueAccent, // Solid Blue
+              foregroundColor: Colors.white,
               icon: Icons.edit,
               label: 'Edit',
+              borderRadius: const BorderRadius.horizontal(left: Radius.circular(24)),
             ),
             SlidableAction(
               onPressed: (context) {
-                  provider.deleteSettlement(settlement.id);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Settlement deleted')),
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Delete Settlement?'),
+                      content: const Text('Are you sure you want to delete this settlement?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(ctx).pop(),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(ctx).pop();
+                            provider.deleteSettlement(settlement.id);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Settlement deleted')),
+                            );
+                          },
+                          child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                        ),
+                      ],
+                    ),
                   );
               },
-              backgroundColor: Colors.transparent,
-              foregroundColor: const Color(0xFFFE4A49),
+              backgroundColor: const Color(0xFFFE4A49), // Solid Red
+              foregroundColor: Colors.white,
               icon: Icons.delete,
               label: 'Delete',
+              borderRadius: const BorderRadius.horizontal(right: Radius.circular(24)),
             ),
           ],
         ),
@@ -283,11 +304,11 @@ class _PendingSettlementsScreenState extends State<PendingSettlementsScreen> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(
+                        Text(
                         currencyFormat.format(settlement.amount),
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFFC6F432),
+                          color: isDark ? const Color(0xFFC6F432) : Colors.black, // Darker text for light mode
                           fontSize: 18,
                           letterSpacing: -0.5,
                         ),
@@ -306,7 +327,7 @@ class _PendingSettlementsScreenState extends State<PendingSettlementsScreen> {
                            Text(
                             'Settled',
                             style: theme.textTheme.bodySmall?.copyWith(
-                                color: const Color(0xFFC6F432),
+                                color: isDark ? const Color(0xFFC6F432) : const Color(0xFF354012),
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
                             ),
@@ -403,7 +424,7 @@ class _PendingSettlementsScreenState extends State<PendingSettlementsScreen> {
                                           currencyFormat.format(payment.amount), 
                                           style: theme.textTheme.bodyMedium?.copyWith(
                                             fontWeight: FontWeight.w600, 
-                                            color: const Color(0xFFC6F432), // Matching the primary
+                                            color: isDark ? const Color(0xFFC6F432) : Colors.black, // Matching the primary
                                             fontSize: 15
                                           )
                                       ),
