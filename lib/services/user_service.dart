@@ -31,24 +31,13 @@ class UserService {
       Reference ref = _storage.ref().child('user_profile_images').child('$userId.jpg');
       print("DEBUG: Storage Reference: ${ref.fullPath}");
       
-      UploadTask uploadTask = ref.putFile(file);
+      // Simple upload without stream listener for reliability
+      await ref.putFile(file);
       
-      uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
-        print('DEBUG: Upload progress: ${(snapshot.bytesTransferred / snapshot.totalBytes) * 100} %');
-      }, onError: (e) {
-        print('DEBUG: Upload stream error: $e');
-      });
-
-      TaskSnapshot snapshot = await uploadTask;
-      print("DEBUG: Upload Task Finished. State: ${snapshot.state}");
-
-      if (snapshot.state == TaskState.success) {
-        String downloadUrl = await ref.getDownloadURL();
-        print("DEBUG: Download URL retrieved: $downloadUrl");
-        return downloadUrl;
-      } else {
-        throw 'Upload failed. Task State: ${snapshot.state}';
-      }
+      // Get URL after upload completes
+      String downloadUrl = await ref.getDownloadURL();
+      print("DEBUG: Download URL retrieved: $downloadUrl");
+      return downloadUrl;
     } catch (e) {
       print("DEBUG: Error in uploadProfilePicture: $e");
       rethrow;

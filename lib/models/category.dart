@@ -76,9 +76,9 @@ extension CategoryExtension on ExpenseCategory {
       case ExpenseCategory.other:
         return 'assets/icons/other.png';
       case ExpenseCategory.emi:
-        return 'assets/icons/emi_payment.png';
+        return 'assets/icons/emi.png';
       case ExpenseCategory.ccBill:
-        return 'assets/icons/cc_bill_payment.png';
+        return 'assets/icons/cc_bill.png';
     }
   }
 

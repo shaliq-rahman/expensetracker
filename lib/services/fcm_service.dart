@@ -1,5 +1,6 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
 class FCMService {
@@ -24,23 +25,50 @@ class FCMService {
     }
 
     // Listen to token refresh
-    _firebaseMessaging.onTokenRefresh.listen((newToken) {
-      // Note: We might want to update this in the DB if we have a current user
-      // For now we will rely on the app logic to call saveTokenToDatabase
-      if (kDebugMode) {
+    _firebaseMessaging.onTokenRefresh.listen((newToken) async {
+       if (kDebugMode) {
         print("FCM Token Refreshed: $newToken");
       }
+      
+      // Update in DB if user is logged in
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        await saveTokenToDatabase(currentUser.uid);
+      }
     });
+
+    // Check if user is already logged in and update token
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      await saveTokenToDatabase(currentUser.uid);
+      await subscribeToTopic('xtrack-users');
+    }
   }
 
   Future<String?> getToken() async {
     if (defaultTargetPlatform == TargetPlatform.iOS) {
+      // Retry getting APNS token up to 3 times
+      for (int i = 0; i < 3; i++) {
+        String? apnsToken = await _firebaseMessaging.getAPNSToken();
+        if (apnsToken != null) {
+          if (kDebugMode) {
+             print('APNS Token retrieved: $apnsToken');
+          }
+          break; // Found it!
+        }
+        
+        if (kDebugMode) {
+           print('APNS Token not available yet. Retrying in 3 seconds... (Attempt ${i + 1}/3)');
+        }
+        await Future.delayed(const Duration(seconds: 3));
+      }
+      
       String? apnsToken = await _firebaseMessaging.getAPNSToken();
       if (apnsToken == null) {
         if (kDebugMode) {
-          print('APNS Token not available yet');
+           print('APNS Token still null after retries. FCM token generation may fail on iOS.');
         }
-        return null;
+        // We still try to get the FCM token, but it might fail or return null
       }
     }
     return await _firebaseMessaging.getToken();
