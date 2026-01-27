@@ -22,11 +22,13 @@ class _AddPendingSettlementScreenState extends State<AddPendingSettlementScreen>
   final _toWhomController = TextEditingController();
   final _amountFormat = NumberFormat.decimalPattern('en_IN');
   DateTime _selectedDate = DateTime.now();
+  String _selectedType = 'Person';
 
   @override
   void initState() {
     super.initState();
     if (widget.settlement != null) {
+        _selectedType = widget.settlement!.type;
         _titleController.text = widget.settlement!.title;
         _amountController.text = _amountFormat.format(widget.settlement!.amount);
         _toWhomController.text = widget.settlement!.toWhom;
@@ -131,6 +133,7 @@ class _AddPendingSettlementScreenState extends State<AddPendingSettlementScreen>
             toWhom: enteredToWhom,
             expectedClosingDate: _selectedDate,
             isSettled: widget.settlement!.isSettled,
+            type: _selectedType,
         );
         provider.updateSettlement(updatedSettlement);
     } else {
@@ -144,6 +147,7 @@ class _AddPendingSettlementScreenState extends State<AddPendingSettlementScreen>
               : [],
           toWhom: enteredToWhom,
           expectedClosingDate: _selectedDate,
+          type: _selectedType,
         );
         provider.addSettlement(settlement);
     }
@@ -196,6 +200,25 @@ class _AddPendingSettlementScreenState extends State<AddPendingSettlementScreen>
                 ),
               ),
               const SizedBox(height: 32),
+
+              // Type Selector
+              FadeInSlide(
+                delay: 0.05,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardTheme.color,
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: Row(
+                    children: [
+                      _buildTypeOption('Person', Icons.person),
+                      _buildTypeOption('Card', Icons.credit_card),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
               
               // Title
               FadeInSlide(
@@ -341,6 +364,46 @@ class _AddPendingSettlementScreenState extends State<AddPendingSettlementScreen>
           hintText: hint,
           hintStyle: TextStyle(color: Colors.grey[600]),
           icon: Icon(icon, color: Colors.grey, size: 20),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTypeOption(String type, IconData icon) {
+    bool isSelected = _selectedType == type;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _selectedType = type;
+          });
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFFC6F432) : Colors.transparent,
+            borderRadius: BorderRadius.circular(26),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 20,
+                color: isSelected ? Colors.black : Colors.grey,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                type,
+                style: TextStyle(
+                  color: isSelected ? Colors.black : Colors.grey,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

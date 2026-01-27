@@ -214,11 +214,16 @@ class _AddRecurringPaymentScreenState extends State<AddRecurringPaymentScreen> {
                       // Filter mainly for recurring types
                       items: [ExpenseCategory.emi, ExpenseCategory.ccBill, ExpenseCategory.savings, ExpenseCategory.other]
                           .map((category) {
-                        return DropdownMenuItem(
-                          value: category,
-                          child: Row(
-                            children: [
-                              Image.asset(category.iconPath, width: 32, height: 32),
+                          return DropdownMenuItem(
+                            value: category,
+                            child: Row(
+                              children: [
+                              Image.asset(
+                                category.iconPath, 
+                                width: 32, 
+                                height: 32,
+                                errorBuilder: (context, error, stackTrace) => const Icon(Icons.category, size: 32),
+                              ),
                               const SizedBox(width: 12),
                               Text(
                                 category.name.toUpperCase(), 

@@ -36,6 +36,7 @@ class PendingSettlement {
   final String toWhom;
   final DateTime expectedClosingDate;
   final bool isSettled;
+  final String type; // 'Person' or 'Card'
 
   PendingSettlement({
     required this.id,
@@ -45,6 +46,7 @@ class PendingSettlement {
     required this.toWhom,
     required this.expectedClosingDate,
     this.isSettled = false,
+    this.type = 'Person',
   });
   
   double get totalPaid {
@@ -64,6 +66,7 @@ class PendingSettlement {
       'toWhom': toWhom,
       'expectedClosingDate': Timestamp.fromDate(expectedClosingDate),
       'isSettled': isSettled,
+      'type': type,
     };
   }
 
@@ -88,6 +91,7 @@ class PendingSettlement {
       toWhom: map['toWhom'] ?? '',
       expectedClosingDate: (map['expectedClosingDate'] as Timestamp).toDate(),
       isSettled: map['isSettled'] ?? false,
+      type: map['type'] ?? 'Person',
     );
   }
 }

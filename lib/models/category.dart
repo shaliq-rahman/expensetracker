@@ -76,9 +76,9 @@ extension CategoryExtension on ExpenseCategory {
       case ExpenseCategory.other:
         return 'assets/icons/other.png';
       case ExpenseCategory.emi:
-        return 'assets/icons/bills.png'; // Reusing bills icon for now or use specific
+        return 'assets/icons/emi_payment.png';
       case ExpenseCategory.ccBill:
-        return 'assets/icons/bills.png'; // Reusing bills icon for now
+        return 'assets/icons/cc_bill_payment.png';
     }
   }
 
@@ -89,10 +89,10 @@ extension CategoryExtension on ExpenseCategory {
       case ExpenseCategory.investment:
         return true;
       case ExpenseCategory.other:
-        return true; // value can be both? For simplicity let's say other is always expense for now or handle it.
-                     // Actually, 'other' is ambiguous. Let's strictly define.
+        return true; 
       default:
         return false;
     }
   }
+
 }

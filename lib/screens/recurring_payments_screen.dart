@@ -227,15 +227,20 @@ class _RecurringPaymentsScreenState extends State<RecurringPaymentsScreen> {
           children: [
             Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: isDark 
-                        ? Colors.white.withOpacity(0.05) 
-                        : Colors.black.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(16),
+               Container(
+                  width: 70, 
+                  height: 70,
+                  padding: const EdgeInsets.all(8),
+                  decoration: const BoxDecoration(
+                    color: Colors.transparent, 
+                    shape: BoxShape.circle,
                   ),
-                  child: Image.asset(payment.category.iconPath, width: 24, height: 24),
+                  child: Image.asset(
+                    payment.category.iconPath,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Icon(Icons.category, color: isDark ? Colors.white : Colors.black, size: 24);
+                    },
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(

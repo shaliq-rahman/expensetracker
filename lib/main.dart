@@ -19,6 +19,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:expense_tracker/firebase_options.dart';
 import 'package:expense_tracker/services/fcm_service.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -54,6 +55,18 @@ class MyApp extends StatelessWidget {
         return MaterialApp(
           title: 'Expense Tracker',
           debugShowCheckedModeBanner: false,
+          
+          // Force English Locale
+          locale: const Locale('en'),
+          supportedLocales: const [
+            Locale('en'),
+          ],
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+
           themeMode: themeProvider.themeMode,
           theme: ThemeData(
             brightness: Brightness.light,
@@ -117,4 +130,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-

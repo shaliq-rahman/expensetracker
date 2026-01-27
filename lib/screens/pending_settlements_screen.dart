@@ -225,19 +225,26 @@ class _PendingSettlementsScreenState extends State<PendingSettlementsScreen> {
             child: ExpansionTile(
               tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               childrenPadding: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
-              showTrailingIcon: false, // Hide default arrow
+              showTrailingIcon: false, 
               title: Row(
                 children: [
-                  // User Icon
+                  // Icon
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    width: 50,
+                    height: 50,
                     decoration: BoxDecoration(
                         color: isDark 
                             ? Colors.white.withOpacity(0.05) 
                             : Colors.black.withOpacity(0.05),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(18),
                     ),
-                    child: Icon(Icons.person, color: theme.iconTheme.color, size: 24),
+                    child: Center(
+                      child: Icon(
+                        settlement.type == 'Card' ? Icons.credit_card : Icons.person,
+                        color: theme.iconTheme.color,
+                        size: 26,
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 16),
                   
@@ -251,8 +258,9 @@ class _PendingSettlementsScreenState extends State<PendingSettlementsScreen> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 18,
+                            letterSpacing: -0.5,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -278,29 +286,29 @@ class _PendingSettlementsScreenState extends State<PendingSettlementsScreen> {
                       Text(
                         currencyFormat.format(settlement.amount),
                         style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? theme.colorScheme.primary : Colors.black,
-                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFFC6F432),
+                          fontSize: 18,
+                          letterSpacing: -0.5,
                         ),
                       ),
                       const SizedBox(height: 4),
-                       // Remaining Balance Indicator
                        if (settlement.remainingAmount > 0)
                            Text(
                             'Bal: ${currencyFormat.format(settlement.remainingAmount)}',
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: Colors.redAccent,
+                              color: const Color(0xFFFF4C4C), // Brighter Red
                               fontWeight: FontWeight.w600,
-                              fontSize: 12,
+                              fontSize: 13,
                             ),
                            )
                        else
                            Text(
                             'Settled',
                             style: theme.textTheme.bodySmall?.copyWith(
-                                color: Colors.green,
+                                color: const Color(0xFFC6F432),
                                 fontWeight: FontWeight.bold,
-                                fontSize: 12,
+                                fontSize: 13,
                             ),
                            )
                     ],
@@ -308,28 +316,44 @@ class _PendingSettlementsScreenState extends State<PendingSettlementsScreen> {
                 ],
               ),
               children: [
-                  const Divider(),
+                   Divider(color: Colors.grey.withOpacity(0.2), height: 32),
                   // History Header
                   Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    padding: const EdgeInsets.only(bottom: 16.0),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Payment History', style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold)),
-                        // Add Payment Button
+                        Text(
+                          'Payment History', 
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          )
+                        ),
+                        
+                        // Add Payment Button - Pill Shape
                         GestureDetector(
                             onTap: () => _showAddPaymentDialog(context, settlement, provider),
                             child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                 decoration: BoxDecoration(
-                                    color: theme.colorScheme.primary.withOpacity(0.2),
+                                    // Dark olive/green bg for contrast
+                                    color: const Color(0xFF354012), 
                                     borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: const Color(0xFFC6F432).withOpacity(0.3), width: 1)
                                 ),
-                                child: Row(
+                                child: const Row(
                                     children: [
-                                        Icon(Icons.add, size: 16, color: theme.colorScheme.primary),
-                                        const SizedBox(width: 4),
-                                        Text('Add', style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
+                                        Icon(Icons.add, size: 16, color: Color(0xFFC6F432)),
+                                        SizedBox(width: 6),
+                                        Text(
+                                          'Add', 
+                                          style: TextStyle(
+                                            color: Color(0xFFC6F432), 
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14
+                                          )
+                                        ),
                                     ],
                                 ),
                             ),
@@ -337,6 +361,7 @@ class _PendingSettlementsScreenState extends State<PendingSettlementsScreen> {
                       ],
                     ),
                   ),
+                  
                   if (settlement.paymentHistory.isEmpty)
                       const Padding(
                           padding: EdgeInsets.symmetric(vertical: 8.0),
@@ -345,28 +370,42 @@ class _PendingSettlementsScreenState extends State<PendingSettlementsScreen> {
                   else
                       ...settlement.paymentHistory.map((payment) {
                           return Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 8.0),
+                              padding: const EdgeInsets.symmetric(vertical: 10.0),
                               child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                      Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                              Text(
-                                                  DateFormat('dd MMM yyyy').format(payment.date), 
-                                                  style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)
-                                              ),
-                                              if (payment.note.isNotEmpty)
-                                                  Text(
-                                                      payment.note, 
-                                                      style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey)
-                                                  ),
-                                          ],
+                                      Expanded(
+                                        child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                                Text(
+                                                    DateFormat('dd MMM yyyy').format(payment.date), 
+                                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                                      fontWeight: FontWeight.w600,
+                                                      fontSize: 15
+                                                    )
+                                                ),
+                                                if (payment.note.isNotEmpty)
+                                                    Padding(
+                                                      padding: const EdgeInsets.only(top: 4.0),
+                                                      child: Text(
+                                                          payment.note, 
+                                                          style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey[500], fontSize: 13),
+                                                          overflow: TextOverflow.ellipsis,
+                                                          maxLines: 2,
+                                                      ),
+                                                    ),
+                                            ],
+                                        ),
                                       ),
                                       Text(
                                           currencyFormat.format(payment.amount), 
-                                          style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold, color: Colors.green)
+                                          style: theme.textTheme.bodyMedium?.copyWith(
+                                            fontWeight: FontWeight.w600, 
+                                            color: const Color(0xFFC6F432), // Matching the primary
+                                            fontSize: 15
+                                          )
                                       ),
                                   ],
                               ),
