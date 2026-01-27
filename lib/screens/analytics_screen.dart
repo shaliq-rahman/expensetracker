@@ -6,6 +6,9 @@ import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:expense_tracker/models/category.dart';
 import 'package:expense_tracker/models/transaction.dart';
 
+import 'package:expense_tracker/widgets/fade_in_slide.dart';
+import 'package:expense_tracker/widgets/scale_button.dart';
+
 class AnalyticsScreen extends StatefulWidget {
   const AnalyticsScreen({super.key});
 
@@ -29,21 +32,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     final expenseProvider = Provider.of<ExpenseProvider>(context);
     
     // Filter transactions logic (similar to Home Screen but local for Analytics layout ref)
-    // Actually ExpenseProvider has a method for this, let's use it to get filtered transactions
-    // and then manually compute category totals from those specific transactions
-    // because expenseProvider.categoryTotals is a getter for ALL transactions usually or depends on how it's implemented.
-    // Checking previous knowledge: expenseProvider.categoryTotals might be global. 
-    // Let's check ExpenseProvider usage in HomeScreen. 
-    // HomeScreen uses: provider.getFilteredTransactions(_filterType, _selectedDate);
-    // Analytics needs category totals for the PIE CHART. 
-    // If I use getFilteredTransactions, I need to group them by category myself or add a helper in Provider.
-    // For now, I will calculate it here to avoid modifying Provider if not needed, or better yet, verify Provider capabilities.
-    
-    // Wait, let's look at build method again. 
-    // It calls `final categoryTotals = expenseProvider.categoryTotals;` 
-    // `categoryTotals` likely returns totals for ALL transactions. 
-    // I need totals for FILTERED transactions.
-    
     final filteredTransactions = expenseProvider.getFilteredTransactions(_filterType, _selectedDate);
     final Map<ExpenseCategory, double> filteredTotals = {};
     double filteredTotalExpense = 0;
@@ -74,34 +62,36 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         iconTheme: Theme.of(context).appBarTheme.iconTheme,
         actions: [
             // Filter dropdown in AppBar
-            PopupMenuButton<String>(
-              onSelected: _updateFilter,
-              itemBuilder: (BuildContext context) {
-                return {'Day', 'Month', 'Year'}.map((String choice) {
-                  return PopupMenuItem<String>(
-                    value: choice,
-                    child: Text(choice),
-                  );
-                }).toList();
-              },
-              child: Container(
-                margin: const EdgeInsets.only(right: 16),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardTheme.color,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      _filterType,
-                      style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: 13, fontWeight: FontWeight.w500),
-                    ),
-                    const SizedBox(width: 4),
-                    Icon(Icons.keyboard_arrow_down, color: Theme.of(context).iconTheme.color, size: 16),
-                  ],
+            ScaleButton(
+              child: PopupMenuButton<String>(
+                onSelected: _updateFilter,
+                itemBuilder: (BuildContext context) {
+                  return {'Day', 'Month', 'Year'}.map((String choice) {
+                    return PopupMenuItem<String>(
+                      value: choice,
+                      child: Text(choice),
+                    );
+                  }).toList();
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(right: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardTheme.color,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _filterType,
+                        style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: 13, fontWeight: FontWeight.w500),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(Icons.keyboard_arrow_down, color: Theme.of(context).iconTheme.color, size: 16),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -124,62 +114,65 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 children: [
                   const SizedBox(height: 30),
                   // Interactive Pie Chart
-                  SizedBox(
-                    height: 220, // Reduced height
-                    child: PieChart(
-                      PieChartData(
-                        pieTouchData: PieTouchData(
-                          touchCallback: (FlTouchEvent event, pieTouchResponse) {
-                            setState(() {
-                              if (!event.isInterestedForInteractions ||
-                                  pieTouchResponse == null ||
-                                  pieTouchResponse.touchedSection == null) {
-                                touchedIndex = -1;
-                                return;
-                              }
-                              touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
-                            });
-                          },
+                  FadeInSlide(
+                    child: SizedBox(
+                      height: 220, // Reduced height
+                      child: PieChart(
+                        PieChartData(
+                          pieTouchData: PieTouchData(
+                            touchCallback: (FlTouchEvent event, pieTouchResponse) {
+                              setState(() {
+                                if (!event.isInterestedForInteractions ||
+                                    pieTouchResponse == null ||
+                                    pieTouchResponse.touchedSection == null) {
+                                  touchedIndex = -1;
+                                  return;
+                                }
+                                touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
+                              });
+                            },
+                          ),
+                          borderData: FlBorderData(show: false),
+                          sectionsSpace: 6, // Increased space for depth
+                          centerSpaceRadius: 40, // Reduced center space
+                          centerSpaceColor: Theme.of(context).scaffoldBackgroundColor,
+                          sections: List.generate(nonZeroCategories.length, (i) {
+                            final entry = nonZeroCategories[i];
+                            final isTouched = i == touchedIndex;
+                            final fontSize = isTouched ? 18.0 : 12.0;
+                            final radius = isTouched ? 60.0 : 50.0; // Reduced thickness
+                            final percentage = (entry.value / totalExpense) * 100;
+                            
+                            return PieChartSectionData(
+                              color: _getCategoryColor(entry.key),
+                              value: entry.value,
+                              title: '${percentage.toStringAsFixed(0)}%',
+                              radius: radius,
+                              titleStyle: TextStyle(
+                                fontSize: fontSize,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                shadows: const [Shadow(color: Colors.black, blurRadius: 2)],
+                              ),
+                              badgeWidget: isTouched ? _buildBadge(entry.key) : null,
+                              badgePositionPercentageOffset: 1.1,
+                            );
+                          }),
                         ),
-                        borderData: FlBorderData(show: false),
-                        sectionsSpace: 6, // Increased space for depth
-                        centerSpaceRadius: 40, // Reduced center space
-                        centerSpaceColor: Theme.of(context).scaffoldBackgroundColor,
-                        sections: List.generate(nonZeroCategories.length, (i) {
-                          final entry = nonZeroCategories[i];
-                          final isTouched = i == touchedIndex;
-                          final fontSize = isTouched ? 18.0 : 12.0;
-                          final radius = isTouched ? 60.0 : 50.0; // Reduced thickness
-                          final percentage = (entry.value / totalExpense) * 100;
-                          
-                          return PieChartSectionData(
-                            color: _getCategoryColor(entry.key),
-                            value: entry.value,
-                            title: '${percentage.toStringAsFixed(0)}%',
-                            radius: radius,
-                            titleStyle: TextStyle(
-                              fontSize: fontSize,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              shadows: const [Shadow(color: Colors.black, blurRadius: 2)],
-                            ),
-                            badgeWidget: isTouched ? _buildBadge(entry.key) : null,
-                            badgePositionPercentageOffset: 1.1,
-                            // Gradient to simulate 3D (Future enhancement: FLChart doesn't support direct gradients on sections easily yet without shader mask, 
-                            // sticking to solid bold colors with shadows in title for now, but using distinct palette).
-                          );
-                        }),
                       ),
                     ),
                   ),
                   const SizedBox(height: 40),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Breakdown',
-                        style: TextStyle(color: Theme.of(context).textTheme.titleLarge?.color, fontSize: 20, fontWeight: FontWeight.bold),
+                  FadeInSlide(
+                    delay: 0.1,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Breakdown',
+                          style: TextStyle(color: Theme.of(context).textTheme.titleLarge?.color, fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ),
                   ),
@@ -196,65 +189,70 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       final category = entry.key;
                       final amount = entry.value;
 
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 16), // Match Home Screen margin
-                        padding: const EdgeInsets.all(16), // Match Home Screen padding
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).cardTheme.color,
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        child: Row(
-                          children: [
-                            // Large Icon Container (Matching Home Screen Size & Shape)
-                            Container(
-                              width: 70,
-                              height: 70,
-                              decoration: const BoxDecoration(
-                                color: Colors.transparent, // Removed background color
-                                shape: BoxShape.circle,
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Image.asset(
-                                  category.iconPath,
-                                  fit: BoxFit.contain,
+                      return FadeInSlide(
+                        delay: 0.15 + (index * 0.05),
+                        child: ScaleButton(
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 16), // Match Home Screen margin
+                            padding: const EdgeInsets.all(16), // Match Home Screen padding
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).cardTheme.color,
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                            child: Row(
+                              children: [
+                                // Large Icon Container (Matching Home Screen Size & Shape)
+                                Container(
+                                  width: 70,
+                                  height: 70,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.transparent, // Removed background color
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Image.asset(
+                                      category.iconPath,
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    category.name,
-                                    style: TextStyle(
-                                      fontFamily: 'Outfit', // Match Home Screen Font
-                                      color: Theme.of(context).textTheme.bodyLarge?.color,
-                                      fontSize: 16, // Match Home Screen Size (was 18)
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        category.name,
+                                        style: TextStyle(
+                                          fontFamily: 'Outfit', // Match Home Screen Font
+                                          color: Theme.of(context).textTheme.bodyLarge?.color,
+                                          fontSize: 16, // Match Home Screen Size (was 18)
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        '${(amount / totalExpense * 100).toStringAsFixed(1)}%',
+                                        style: TextStyle(
+                                          color: Colors.grey[600], // Match Home Screen Grey
+                                          fontSize: 13, // Match Home Screen Size (was 14)
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '${(amount / totalExpense * 100).toStringAsFixed(1)}%',
-                                    style: TextStyle(
-                                      color: Colors.grey[600], // Match Home Screen Grey
-                                      fontSize: 13, // Match Home Screen Size (was 14)
-                                    ),
+                                ),
+                                Text(
+                                  NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0).format(amount),
+                                  style: TextStyle(
+                                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                                    fontSize: 16, // Match Home Screen Size (was 18)
+                                    fontWeight: FontWeight.bold,
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                            Text(
-                              NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0).format(amount),
-                              style: TextStyle(
-                                color: Theme.of(context).textTheme.bodyLarge?.color,
-                                fontSize: 16, // Match Home Screen Size (was 18)
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       );
                     },
@@ -307,6 +305,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         return const Color(0xFFFF6D00); // Orange Accent 400
       case ExpenseCategory.other:
         return const Color(0xFFB0BEC5); // Blue Grey 200
+      case ExpenseCategory.emi:
+        return const Color(0xFF795548); // Brown 500
+      case ExpenseCategory.ccBill:
+        return const Color(0xFF607D8B); // Blue Grey 500
     }
   }
 }

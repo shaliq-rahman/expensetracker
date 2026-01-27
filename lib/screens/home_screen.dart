@@ -8,6 +8,9 @@ import 'package:expense_tracker/providers/theme_provider.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:expense_tracker/screens/add_transaction_screen.dart';
 import 'package:expense_tracker/widgets/custom_snackbar.dart';
+import 'package:expense_tracker/widgets/fade_in_slide.dart';
+import 'package:expense_tracker/widgets/scale_button.dart';
+
 class HomeScreen extends StatefulWidget {
   final VoidCallback onAddExpense;
   final VoidCallback onViewAll;
@@ -43,23 +46,22 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Text('Home', style: Theme.of(context).appBarTheme.titleTextStyle),
             const SizedBox(width: 8),
-            Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardTheme.color,
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: Icon(
+            ScaleButton(
+              onTap: () {
+                final provider = Provider.of<ThemeProvider>(context, listen: false);
+                provider.toggleTheme(!provider.isDarkMode);
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardTheme.color,
+                  shape: BoxShape.circle,
+                ),
+                padding: const EdgeInsets.all(8),
+                child: Icon(
                   Provider.of<ThemeProvider>(context).isDarkMode ? Icons.wb_sunny : Icons.nightlight_round,
                   color: Theme.of(context).iconTheme.color,
                   size: 20,
                 ),
-                onPressed: () {
-                  final provider = Provider.of<ThemeProvider>(context, listen: false);
-                  provider.toggleTheme(!provider.isDarkMode);
-                },
-                constraints: const BoxConstraints(), // Minimizes padding constraints
-                padding: const EdgeInsets.all(8), // Add padding manually for touch target
               ),
             ),
           ],
@@ -67,46 +69,49 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Colors.transparent, // Gradient visibility
         actions: [
             // Filter dropdown in AppBar
-            PopupMenuButton<String>(
-              onSelected: _updateFilter,
-              itemBuilder: (BuildContext context) {
-                return {'Day', 'Month', 'Year'}.map((String choice) {
-                  return PopupMenuItem<String>(
-                    value: choice,
-                    child: Text(choice),
-                  );
-                }).toList();
-              },
-              child: Container(
-                margin: const EdgeInsets.only(right: 16),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardTheme.color,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      _filterType,
-                      style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: 13, fontWeight: FontWeight.w500),
-                    ),
-                    const SizedBox(width: 4),
-                    Icon(Icons.keyboard_arrow_down, color: Theme.of(context).iconTheme.color, size: 16),
-                  ],
+            ScaleButton(
+              child: PopupMenuButton<String>(
+                onSelected: _updateFilter,
+                itemBuilder: (BuildContext context) {
+                  return {'Day', 'Month', 'Year'}.map((String choice) {
+                    return PopupMenuItem<String>(
+                      value: choice,
+                      child: Text(choice),
+                    );
+                  }).toList();
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(right: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardTheme.color,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _filterType,
+                        style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: 13, fontWeight: FontWeight.w500),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(Icons.keyboard_arrow_down, color: Theme.of(context).iconTheme.color, size: 16),
+                    ],
+                  ),
                 ),
               ),
             ),
-          Container(
-            margin: const EdgeInsets.only(right: 20),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardTheme.color,
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: Icon(Icons.notifications_none, color: Theme.of(context).iconTheme.color),
-              onPressed: () {},
+          ScaleButton(
+            onTap: () {},
+            child: Container(
+              margin: const EdgeInsets.only(right: 20),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardTheme.color,
+                shape: BoxShape.circle,
+              ),
+              padding: const EdgeInsets.all(8), // Manual padding since we removed IconButton
+              child: Icon(Icons.notifications_none, color: Theme.of(context).iconTheme.color),
             ),
           )
         ],
@@ -120,31 +125,41 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 10),
 
               // Split Balance Card (Income vs Expense)
-              _buildSplitBalanceCard(income, expense),
+              FadeInSlide(
+                duration: const Duration(milliseconds: 600),
+                child: _buildSplitBalanceCard(income, expense)
+              ),
               
               const SizedBox(height: 20),
 
               // Total Balance Card
-              _buildBalanceCard(income - expense),
+              FadeInSlide(
+                delay: 0.1,
+                duration: const Duration(milliseconds: 600),
+                child: _buildBalanceCard(income - expense)
+              ),
               
               const SizedBox(height: 32),
               
               // Recent Transfers Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Recent Transfers',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.titleLarge?.color),
-                  ),
-                  TextButton(
-                    onPressed: widget.onViewAll,
-                    child: Text(
-                      'View All', 
-                      style: TextStyle(color: Colors.grey[600]),
+              FadeInSlide(
+                delay: 0.2,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Recent Transfers',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.titleLarge?.color),
                     ),
-                  ),
-                ],
+                    ScaleButton(
+                      onTap: widget.onViewAll,
+                      child: Text(
+                        'View All', 
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               
               // Transaction List
@@ -280,105 +295,108 @@ class _HomeScreenState extends State<HomeScreen> {
         final tx = transactions[index];
         final isIncome = tx.type == TransactionType.income;
         
-        return Padding(
-          key: ValueKey(tx.id),
-          padding: const EdgeInsets.only(bottom: 16),
-          child: Slidable(
-            endActionPane: ActionPane(
-              motion: const ScrollMotion(),
-              extentRatio: 0.5, // Adjust width of actions to be reasonable
-              children: [
-                SlidableAction(
-                  onPressed: (context) {
-                     Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => AddTransactionScreen(transaction: tx),
-                      ),
-                    );
-                  },
-                  backgroundColor: Colors.transparent,
-                  foregroundColor: Colors.white,
-                  icon: Icons.edit,
-                  label: 'Edit',
-                ),
-                SlidableAction(
-                  onPressed: (context) {
-                     provider.deleteTransaction(tx.id);
-                     CustomSnackBar.show(context, 'Transaction deleted');
-                  },
-                  backgroundColor: Colors.transparent,
-                  foregroundColor: const Color(0xFFFE4A49),
-                  icon: Icons.delete,
-                  label: 'Delete',
-                ),
-              ],
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardTheme.color,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              padding: const EdgeInsets.all(16),
-              child: Row(
+        return FadeInSlide(
+          delay: 0.3 + (index * 0.1), // Staggered delay starting after cards
+          child: Padding(
+            key: ValueKey(tx.id),
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Slidable(
+              endActionPane: ActionPane(
+                motion: const ScrollMotion(),
+                extentRatio: 0.5, // Adjust width of actions to be reasonable
                 children: [
-                  // Avatar / Icon
-                  Container(
-                    width: 70,
-                    height: 70,
-                    decoration: const BoxDecoration(
-                      color: Colors.transparent,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Image.asset(tx.category.iconPath),
-                    ),
+                  SlidableAction(
+                    onPressed: (context) {
+                       Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => AddTransactionScreen(transaction: tx),
+                        ),
+                      );
+                    },
+                    backgroundColor: Colors.transparent,
+                    foregroundColor: Colors.white,
+                    icon: Icons.edit,
+                    label: 'Edit',
                   ),
-                  const SizedBox(width: 16),
-                  
-                  // Details
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  SlidableAction(
+                    onPressed: (context) {
+                       provider.deleteTransaction(tx.id);
+                       CustomSnackBar.show(context, 'Transaction deleted');
+                    },
+                    backgroundColor: Colors.transparent,
+                    foregroundColor: const Color(0xFFFE4A49),
+                    icon: Icons.delete,
+                    label: 'Delete',
+                  ),
+                ],
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardTheme.color,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    // Avatar / Icon
+                    Container(
+                      width: 70,
+                      height: 70,
+                      decoration: const BoxDecoration(
+                        color: Colors.transparent,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Image.asset(tx.category.iconPath),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    
+                    // Details
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            tx.title,
+                            style: TextStyle(
+                              fontFamily: 'Outfit',
+                              color: Theme.of(context).textTheme.bodyLarge?.color,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            DateFormat.yMMMd().add_jm().format(tx.date),
+                            style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    // Amount
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          tx.title,
+                          '${isIncome ? '+' : '-'} ${NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2).format(tx.amount)}',
                           style: TextStyle(
-                            fontFamily: 'Outfit',
-                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                            color: isIncome ? const Color(0xFF00C853) : Theme.of(context).textTheme.bodyLarge?.color,
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          DateFormat.yMMMd().add_jm().format(tx.date),
-                          style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                          isIncome ? 'Received' : 'Spent',
+                          style: TextStyle(color: Colors.grey[600], fontSize: 11),
                         ),
                       ],
                     ),
-                  ),
-                  
-                  // Amount
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '${isIncome ? '+' : '-'} ${NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2).format(tx.amount)}',
-                        style: TextStyle(
-                          color: isIncome ? const Color(0xFF00C853) : Theme.of(context).textTheme.bodyLarge?.color,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        isIncome ? 'Received' : 'Spent',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 11),
-                      ),
-                    ],
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

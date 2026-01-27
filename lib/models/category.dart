@@ -11,6 +11,8 @@ enum ExpenseCategory {
   savings,
   investment,
   other,
+  emi,
+  ccBill,
 }
 
 extension CategoryExtension on ExpenseCategory {
@@ -40,6 +42,10 @@ extension CategoryExtension on ExpenseCategory {
         return 'Investment';
       case ExpenseCategory.other:
         return 'Other';
+      case ExpenseCategory.emi:
+        return 'EMI';
+      case ExpenseCategory.ccBill:
+        return 'CC Bill';
     }
   }
 
@@ -69,6 +75,10 @@ extension CategoryExtension on ExpenseCategory {
         return 'assets/icons/investment.png';
       case ExpenseCategory.other:
         return 'assets/icons/other.png';
+      case ExpenseCategory.emi:
+        return 'assets/icons/bills.png'; // Reusing bills icon for now or use specific
+      case ExpenseCategory.ccBill:
+        return 'assets/icons/bills.png'; // Reusing bills icon for now
     }
   }
 

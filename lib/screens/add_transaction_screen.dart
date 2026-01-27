@@ -9,6 +9,9 @@ import 'package:expense_tracker/widgets/gradient_background.dart';
 
 import 'package:expense_tracker/widgets/custom_snackbar.dart';
 
+import 'package:expense_tracker/widgets/fade_in_slide.dart';
+import 'package:expense_tracker/widgets/scale_button.dart';
+
 class AddTransactionScreen extends StatefulWidget {
   final Transaction? transaction;
 
@@ -193,9 +196,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         appBar: AppBar(
         backgroundColor: Colors.transparent, // Transparent to show gradient
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Theme.of(context).iconTheme.color),
-          onPressed: () => Navigator.of(context).pop(),
+        leading: ScaleButton(
+          onTap: () => Navigator.of(context).pop(),
+          child: Icon(Icons.arrow_back, color: Theme.of(context).iconTheme.color),
         ),
         title: Text(
           widget.transaction == null ? 'Add Expense' : 'Edit Expense', 
@@ -214,46 +217,51 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Transaction Type Toggle (Custom Curved Card)
-            Center(
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardTheme.color,
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                     _buildToggleOption(TransactionType.expense, Icons.money_off),
-                     _buildToggleOption(TransactionType.income, Icons.attach_money),
-                  ],
+            FadeInSlide(
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardTheme.color,
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                       _buildToggleOption(TransactionType.expense, Icons.money_off),
+                       _buildToggleOption(TransactionType.income, Icons.attach_money),
+                    ],
+                  ),
                 ),
               ),
             ),
             const SizedBox(height: 32),
 
             // Amount Input
-            Center(
-              child: IntrinsicWidth(
-                child: TextField(
-                  controller: _amountController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[0-9,]')), // Allow digits and commas
-                  ],
-                  onChanged: _onAmountChanged,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                      fontSize: 48, 
-                      fontWeight: FontWeight.bold,
-                      color: _transactionType == TransactionType.income ? const Color(0xFFC6F432) : Theme.of(context).textTheme.bodyLarge?.color
-                  ),
-                  decoration: InputDecoration(
-                    prefixText: '₹ ', 
-                    prefixStyle: TextStyle(fontSize: 24, color: Colors.grey[600], fontWeight: FontWeight.bold),
-                    border: InputBorder.none,
-                    hintText: '0',
-                    hintStyle: TextStyle(color: Colors.grey[800]),
+            FadeInSlide(
+              delay: 0.1,
+              child: Center(
+                child: IntrinsicWidth(
+                  child: TextField(
+                    controller: _amountController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[0-9,]')), // Allow digits and commas
+                    ],
+                    onChanged: _onAmountChanged,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 48, 
+                        fontWeight: FontWeight.bold,
+                        color: _transactionType == TransactionType.income ? const Color(0xFFC6F432) : Theme.of(context).textTheme.bodyLarge?.color
+                    ),
+                    decoration: InputDecoration(
+                      prefixText: '₹ ', 
+                      prefixStyle: TextStyle(fontSize: 24, color: Colors.grey[600], fontWeight: FontWeight.bold),
+                      border: InputBorder.none,
+                      hintText: '0',
+                      hintStyle: TextStyle(color: Colors.grey[800]),
+                    ),
                   ),
                 ),
               ),
@@ -261,53 +269,59 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             const SizedBox(height: 32),
             
             // Title / Category
-            _buildInputField(
-              controller: _titleController,
-              hint: 'Title (e.g. Dinner)',
-              icon: Icons.edit,
-              textCapitalization: TextCapitalization.sentences,
+            FadeInSlide(
+              delay: 0.2,
+              child: _buildInputField(
+                controller: _titleController,
+                hint: 'Title (e.g. Dinner)',
+                icon: Icons.edit,
+                textCapitalization: TextCapitalization.sentences,
+              ),
             ),
             
             const SizedBox(height: 16),
             
             // Category Dropdown (Custom styled)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardTheme.color,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<ExpenseCategory>(
-                  value: _selectedCategory,
-                  isExpanded: true,
-                  dropdownColor: Theme.of(context).cardTheme.color,
-                  icon: Icon(Icons.chevron_right, color: Theme.of(context).iconTheme.color),
-                  items: ExpenseCategory.values
-                      .where((cat) => _transactionType == TransactionType.income 
-                          ? (cat.isIncome || cat == ExpenseCategory.other) 
-                          : (!cat.isIncome || cat == ExpenseCategory.other))
-                      .map((category) {
-                    return DropdownMenuItem(
-                      value: category,
-                      child: Row(
-                        children: [
-                          Image.asset(category.iconPath, width: 40, height: 40),
-                          const SizedBox(width: 12),
-                          Text(
-                            category.name.toUpperCase(), 
-                            style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color),
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    if (value == null) return;
-                    setState(() {
-                      _selectedCategory = value;
-                    });
-                  },
+            FadeInSlide(
+              delay: 0.25,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardTheme.color,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<ExpenseCategory>(
+                    value: _selectedCategory,
+                    isExpanded: true,
+                    dropdownColor: Theme.of(context).cardTheme.color,
+                    icon: Icon(Icons.chevron_right, color: Theme.of(context).iconTheme.color),
+                    items: ExpenseCategory.values
+                        .where((cat) => _transactionType == TransactionType.income 
+                            ? (cat.isIncome || cat == ExpenseCategory.other) 
+                            : (!cat.isIncome || cat == ExpenseCategory.other))
+                        .map((category) {
+                      return DropdownMenuItem(
+                        value: category,
+                        child: Row(
+                          children: [
+                            Image.asset(category.iconPath, width: 40, height: 40),
+                            const SizedBox(width: 12),
+                            Text(
+                              category.name.toUpperCase(), 
+                              style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontFamily: 'Outfit'),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setState(() {
+                        _selectedCategory = value;
+                      });
+                    },
+                  ),
                 ),
               ),
             ),
@@ -315,144 +329,151 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             const SizedBox(height: 16),
             
             // Note
-            _buildInputField(
-              controller: _noteController,
-              hint: 'Note (Optional)',
-              icon: Icons.notes,
+            FadeInSlide(
+              delay: 0.3,
+              child: _buildInputField(
+                controller: _noteController,
+                hint: 'Note (Optional)',
+                icon: Icons.notes,
+              ),
             ),
 
             const SizedBox(height: 16),
 
             // Date & Time Pickers
-            Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: _presentDatePicker,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).cardTheme.color,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.calendar_today, color: Colors.grey, size: 20),
-                          const SizedBox(width: 12),
-                          Text(
-                            DateFormat.yMMMd().format(_selectedDate),
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Theme.of(context).textTheme.bodyLarge?.color),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: _presentTimePicker,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).cardTheme.color,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.access_time, color: Colors.grey, size: 20),
-                          const SizedBox(width: 12),
-                          Text(
-                            _selectedTime.format(context),
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Theme.of(context).textTheme.bodyLarge?.color),
-                          ),
-                        ],
+            FadeInSlide(
+              delay: 0.35,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ScaleButton(
+                      onTap: _presentDatePicker,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardTheme.color,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.calendar_today, color: Colors.grey, size: 20),
+                            const SizedBox(width: 12),
+                            Text(
+                              DateFormat.yMMMd().format(_selectedDate),
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Theme.of(context).textTheme.bodyLarge?.color),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ScaleButton(
+                      onTap: _presentTimePicker,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardTheme.color,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.access_time, color: Colors.grey, size: 20),
+                            const SizedBox(width: 12),
+                            Text(
+                              _selectedTime.format(context),
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Theme.of(context).textTheme.bodyLarge?.color),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
 
             const SizedBox(height: 24),
             
             // Payment Mode (Chips)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: PaymentMode.values.map((mode) {
-                final isSelected = _selectedPaymentMode == mode;
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedPaymentMode = mode;
-                    });
-                  },
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          color: isSelected ? const Color(0xFFC6F432) : Theme.of(context).cardTheme.color, // Lime Green vs Dark Grey
-                          shape: BoxShape.rectangle,
-                          borderRadius: BorderRadius.circular(16),
-                          // border: isSelected ? Border.all(color: const Color(0xFFC6F432), width: 2) : null,
+            FadeInSlide(
+              delay: 0.4,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: PaymentMode.values.map((mode) {
+                  final isSelected = _selectedPaymentMode == mode;
+                  return ScaleButton(
+                    onTap: () {
+                      setState(() {
+                        _selectedPaymentMode = mode;
+                      });
+                    },
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            color: isSelected ? const Color(0xFFC6F432) : Theme.of(context).cardTheme.color, // Lime Green vs Dark Grey
+                            shape: BoxShape.rectangle,
+                            borderRadius: BorderRadius.circular(16),
+                            // border: isSelected ? Border.all(color: const Color(0xFFC6F432), width: 2) : null,
+                          ),
+                          child: Icon(
+                            _getPaymentIcon(mode),
+                            color: isSelected ? Colors.black : Colors.grey,
+                          ),
                         ),
-                        child: Icon(
-                          _getPaymentIcon(mode),
-                          color: isSelected ? Colors.black : Colors.grey,
+                        const SizedBox(height: 8),
+                        Text(
+                          mode.toString().split('.').last.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            color: isSelected ? Theme.of(context).textTheme.bodyMedium?.color : Colors.grey[600],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        mode.toString().split('.').last.toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          color: isSelected ? Theme.of(context).textTheme.bodyMedium?.color : Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
             ),
 
             const SizedBox(height: 32),
             
             // Save Button
-            Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(30),
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFC6F432), Color(0xFFAEE010)], // Lime Green Gradient
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFC6F432).withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: ElevatedButton(
-                onPressed: _submitData,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.transparent, // Transparent for gradient
-                  shadowColor: Colors.transparent, // Remove button shadow
-                  foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 18),
-                  shape: RoundedRectangleBorder(
+            FadeInSlide(
+              delay: 0.5,
+              child: ScaleButton(
+                onTap: _submitData,
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(30),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFC6F432), Color(0xFFAEE010)], // Lime Green Gradient
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFC6F432).withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  elevation: 0,
-                ),
-                child: Text(
-                  widget.transaction == null ? 'Save Expense' : 'Update Expense',
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    child: Center(
+                      child: Text(
+                        widget.transaction == null ? 'Save Expense' : 'Update Expense',
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -465,7 +486,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   Widget _buildToggleOption(TransactionType type, IconData icon) {
     final isSelected = _transactionType == type;
-    return GestureDetector(
+    return ScaleButton(
       onTap: () {
           setState(() {
             _transactionType = type;
@@ -519,7 +540,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       ),
       child: TextField(
         controller: controller,
-        style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
+        style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontFamily: 'Outfit'),
         textCapitalization: textCapitalization,
         decoration: InputDecoration(
           border: InputBorder.none,

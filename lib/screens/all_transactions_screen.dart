@@ -9,6 +9,9 @@ import 'package:expense_tracker/screens/add_transaction_screen.dart';
 
 import 'package:expense_tracker/widgets/custom_snackbar.dart';
 
+import 'package:expense_tracker/widgets/fade_in_slide.dart';
+import 'package:expense_tracker/widgets/scale_button.dart';
+
 class AllTransactionsScreen extends StatefulWidget {
   const AllTransactionsScreen({super.key});
 
@@ -38,38 +41,44 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         elevation: 0,
         centerTitle: false,
+        leading: ScaleButton(
+          onTap: () => Navigator.of(context).pop(),
+          child: Icon(Icons.arrow_back, color: Theme.of(context).appBarTheme.iconTheme?.color),
+        ),
         iconTheme: Theme.of(context).appBarTheme.iconTheme,
         titleTextStyle: Theme.of(context).appBarTheme.titleTextStyle,
         actions: [
             // Filter dropdown in AppBar
-            PopupMenuButton<String>(
-              onSelected: _updateFilter,
-              itemBuilder: (BuildContext context) {
-                return {'Day', 'Month', 'Year'}.map((String choice) {
-                  return PopupMenuItem<String>(
-                    value: choice,
-                    child: Text(choice),
-                  );
-                }).toList();
-              },
-              child: Container(
-                margin: const EdgeInsets.only(right: 16),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardTheme.color,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      _filterType,
-                      style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: 13, fontWeight: FontWeight.w500),
-                    ),
-                    const SizedBox(width: 4),
-                    Icon(Icons.keyboard_arrow_down, color: Theme.of(context).iconTheme.color, size: 16),
-                  ],
+            ScaleButton(
+              child: PopupMenuButton<String>(
+                onSelected: _updateFilter,
+                itemBuilder: (BuildContext context) {
+                  return {'Day', 'Month', 'Year'}.map((String choice) {
+                    return PopupMenuItem<String>(
+                      value: choice,
+                      child: Text(choice),
+                    );
+                  }).toList();
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(right: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardTheme.color,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _filterType,
+                        style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: 13, fontWeight: FontWeight.w500),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(Icons.keyboard_arrow_down, color: Theme.of(context).iconTheme.color, size: 16),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -90,105 +99,108 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                 final tx = transactions[index];
                 final isIncome = tx.type == TransactionType.income;
 
-                  return Padding(
-                    key: ValueKey(tx.id),
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: Slidable(
-                      endActionPane: ActionPane(
-                        motion: const ScrollMotion(),
-                        extentRatio: 0.5,
-                        children: [
-                          SlidableAction(
-                            onPressed: (context) {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => AddTransactionScreen(transaction: tx),
-                                ),
-                              );
-                            },
-                            backgroundColor: Colors.transparent,
-                            foregroundColor: Colors.white,
-                            icon: Icons.edit,
-                            label: 'Edit',
-                          ),
-                          SlidableAction(
-                            onPressed: (context) {
-                              expenseProvider.deleteTransaction(tx.id);
-                              CustomSnackBar.show(context, 'Transaction deleted');
-                            },
-                            backgroundColor: Colors.transparent,
-                            foregroundColor: const Color(0xFFFE4A49),
-                            icon: Icons.delete,
-                            label: 'Delete',
-                          ),
-                        ],
-                      ),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).cardTheme.color,
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
+                  return FadeInSlide(
+                    delay: index * 0.05,
+                    child: Padding(
+                      key: ValueKey(tx.id),
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Slidable(
+                        endActionPane: ActionPane(
+                          motion: const ScrollMotion(),
+                          extentRatio: 0.5,
                           children: [
-                            // Avatar / Icon
-                            Container(
-                              width: 70,
-                              height: 70,
-                              decoration: const BoxDecoration(
-                                color: Colors.transparent,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Image.asset(tx.category.iconPath),
-                              ),
+                            SlidableAction(
+                              onPressed: (context) {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => AddTransactionScreen(transaction: tx),
+                                  ),
+                                );
+                              },
+                              backgroundColor: Colors.transparent,
+                              foregroundColor: Colors.white,
+                              icon: Icons.edit,
+                              label: 'Edit',
                             ),
-                            const SizedBox(width: 16),
-
-                            // Details
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                            SlidableAction(
+                              onPressed: (context) {
+                                expenseProvider.deleteTransaction(tx.id);
+                                CustomSnackBar.show(context, 'Transaction deleted');
+                              },
+                              backgroundColor: Colors.transparent,
+                              foregroundColor: const Color(0xFFFE4A49),
+                              icon: Icons.delete,
+                              label: 'Delete',
+                            ),
+                          ],
+                        ),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).cardTheme.color,
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            children: [
+                              // Avatar / Icon
+                              Container(
+                                width: 70,
+                                height: 70,
+                                decoration: const BoxDecoration(
+                                  color: Colors.transparent,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Image.asset(tx.category.iconPath),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+    
+                              // Details
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      tx.title,
+                                      style: TextStyle(
+                                        fontFamily: 'Outfit',
+                                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      DateFormat.yMMMd().add_jm().format(tx.date),
+                                      style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                                    ),
+                                  ],
+                                ),
+                              ),
+    
+                              // Amount
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   Text(
-                                    tx.title,
+                                    '${isIncome ? '+' : '-'} ${NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2).format(tx.amount)}',
                                     style: TextStyle(
-                                      fontFamily: 'Outfit',
-                                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                                      color: isIncome ? const Color(0xFF00C853) : Theme.of(context).textTheme.bodyLarge?.color,
                                       fontWeight: FontWeight.bold,
                                       fontSize: 16,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    DateFormat.yMMMd().add_jm().format(tx.date),
-                                    style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                                    isIncome ? 'Received' : 'Spent',
+                                    style: TextStyle(color: Colors.grey[600], fontSize: 11),
                                   ),
                                 ],
                               ),
-                            ),
-
-                            // Amount
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  '${isIncome ? '+' : '-'} ${NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2).format(tx.amount)}',
-                                  style: TextStyle(
-                                    color: isIncome ? const Color(0xFF00C853) : Theme.of(context).textTheme.bodyLarge?.color,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  isIncome ? 'Received' : 'Spent',
-                                  style: TextStyle(color: Colors.grey[600], fontSize: 11),
-                                ),
-                              ],
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
