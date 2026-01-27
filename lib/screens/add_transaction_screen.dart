@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:expense_tracker/models/transaction.dart';
 import 'package:expense_tracker/models/category.dart';
+import 'package:expense_tracker/widgets/gradient_background.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   const AddTransactionScreen({super.key});
@@ -16,9 +18,34 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   final _titleController = TextEditingController();
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
+
+  final _amountFormat = NumberFormat.decimalPattern('en_IN');
+
+  void _onAmountChanged(String value) {
+      if (value.isEmpty) return;
+      
+      // Remove commands to get raw number
+      String rawValue = value.replaceAll(',', '');
+      
+      if (rawValue.isEmpty) return;
+      
+      double? number = double.tryParse(rawValue);
+      
+      if (number == null) return;
+      
+      String formatted = _amountFormat.format(number);
+      
+      if (value != formatted) {
+          _amountController.value = TextEditingValue(
+              text: formatted,
+              selection: TextSelection.collapsed(offset: formatted.length),
+          );
+      }
+  }
   
   DateTime _selectedDate = DateTime.now();
-  ExpenseCategory _selectedCategory = ExpenseCategory.other;
+  TimeOfDay _selectedTime = TimeOfDay.now();
+  ExpenseCategory _selectedCategory = ExpenseCategory.shopping;
   PaymentMode _selectedPaymentMode = PaymentMode.cash;
   TransactionType _transactionType = TransactionType.expense; // Default to expense for this design
 
@@ -29,6 +56,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     _noteController.dispose();
     super.dispose();
   }
+
 
   void _presentDatePicker() {
     showDatePicker(
@@ -56,9 +84,46 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     });
   }
 
+  void _presentTimePicker() {
+    showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+      builder: (context, child) {
+         return Theme(
+          data: Theme.of(context).copyWith(
+            timePickerTheme: TimePickerThemeData(
+              backgroundColor: const Color(0xFF161618),
+              hourMinuteTextColor: Colors.white,
+              dayPeriodTextColor: Colors.white,
+              dialHandColor: Theme.of(context).primaryColor,
+              dialBackgroundColor: Colors.grey[800],
+              entryModeIconColor: Colors.white,
+              hourMinuteColor: MaterialStateColor.resolveWith((states) => 
+                  states.contains(MaterialState.selected) ? Theme.of(context).primaryColor.withOpacity(0.5) : Colors.grey[800]!),
+            ),
+            colorScheme: ColorScheme.dark(
+              primary: Theme.of(context).primaryColor,
+              onPrimary: Colors.black,
+              surface: const Color(0xFF161618),
+              onSurface: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    ).then((pickedTime) {
+      if (pickedTime == null) {
+        return;
+      }
+      setState(() {
+        _selectedTime = pickedTime;
+      });
+    });
+  }
+
   void _submitData() {
     final enteredTitle = _titleController.text; // "Food", "Travel" etc
-    final enteredAmount = double.tryParse(_amountController.text);
+    final enteredAmount = double.tryParse(_amountController.text.replaceAll(',', ''));
     final enteredNote = _noteController.text;
 
     if (enteredTitle.isEmpty || enteredAmount == null || enteredAmount <= 0) {
@@ -69,13 +134,26 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       return;
     }
 
+    // Capitalize Title
+    final capitalizedTitle = enteredTitle.length > 0 
+        ? '${enteredTitle[0].toUpperCase()}${enteredTitle.substring(1)}' 
+        : enteredTitle;
+
+    final combinedDateTime = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      _selectedTime.hour,
+      _selectedTime.minute,
+    );
+
     Provider.of<ExpenseProvider>(context, listen: false).addTransaction(
       Transaction(
-        title: enteredTitle, // User creates title like "Dinner" but usually selects category. 
+        title: capitalizedTitle, // User creates title like "Dinner" but usually selects category. 
                              // In this design, title seems to be "Food" (category name) or custom.
                              // We'll use the title input for now.
         amount: enteredAmount,
-        date: _selectedDate,
+        date: combinedDateTime,
         category: _selectedCategory,
         type: _transactionType,
         paymentMode: _selectedPaymentMode,
@@ -86,21 +164,26 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     Navigator.of(context).pop();
   }
 
+
+
+
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
+    return GradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+        backgroundColor: Colors.transparent, // Transparent to show gradient
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).iconTheme.color),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text('Add Expense', style: TextStyle(color: Colors.black)),
+        title: Text('Add Expense', style: Theme.of(context).appBarTheme.titleTextStyle),
         actions: [
           IconButton(
-            icon: const Icon(Icons.more_horiz, color: Colors.black),
+            icon: Icon(Icons.more_horiz, color: Theme.of(context).iconTheme.color),
             onPressed: () {},
           ),
         ],
@@ -110,45 +193,20 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Transaction Type Toggle
+            // Transaction Type Toggle (Custom Curved Card)
             Center(
-              child: SegmentedButton<TransactionType>(
-                segments: const [
-                  ButtonSegment(
-                    value: TransactionType.expense,
-                    label: Text("Expense"),
-                    icon: Icon(Icons.money_off),
-                  ),
-                  ButtonSegment(
-                    value: TransactionType.income,
-                    label: Text("Income"),
-                    icon: Icon(Icons.attach_money),
-                  ),
-                ],
-                selected: {_transactionType},
-                onSelectionChanged: (Set<TransactionType> newSelection) {
-                  setState(() {
-                    _transactionType = newSelection.first;
-                    // Reset category if it doesn't match new type
-                    if (_transactionType == TransactionType.income) {
-                        if (!_selectedCategory.isIncome && _selectedCategory != ExpenseCategory.other) {
-                            _selectedCategory = ExpenseCategory.salary;
-                        }
-                    } else {
-                        if (_selectedCategory.isIncome) {
-                            _selectedCategory = ExpenseCategory.food;
-                        }
-                    }
-                  });
-                },
-                style: ButtonStyle(
-                  backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
-                    if (states.contains(WidgetState.selected)) {
-                      return const Color(0xFFFDD835);
-                    }
-                    return Colors.grey.shade100;
-                  }),
-                  foregroundColor: WidgetStateProperty.all(Colors.black),
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardTheme.color,
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                     _buildToggleOption(TransactionType.expense, Icons.money_off),
+                     _buildToggleOption(TransactionType.income, Icons.attach_money),
+                  ],
                 ),
               ),
             ),
@@ -160,18 +218,22 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 child: TextField(
                   controller: _amountController,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[0-9,]')), // Allow digits and commas
+                  ],
+                  onChanged: _onAmountChanged,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                       fontSize: 48, 
                       fontWeight: FontWeight.bold,
-                      color: _transactionType == TransactionType.income ? Colors.green : Colors.black
+                      color: _transactionType == TransactionType.income ? const Color(0xFFC6F432) : Theme.of(context).textTheme.bodyLarge?.color
                   ),
                   decoration: InputDecoration(
-                    prefixText: 'INR ', 
-                    prefixStyle: TextStyle(fontSize: 24, color: Colors.grey[400], fontWeight: FontWeight.bold),
+                    prefixText: '₹ ', 
+                    prefixStyle: TextStyle(fontSize: 24, color: Colors.grey[600], fontWeight: FontWeight.bold),
                     border: InputBorder.none,
                     hintText: '0',
-                    hintStyle: TextStyle(color: Colors.grey[300]),
+                    hintStyle: TextStyle(color: Colors.grey[800]),
                   ),
                 ),
               ),
@@ -183,6 +245,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               controller: _titleController,
               hint: 'Title (e.g. Dinner)',
               icon: Icons.edit,
+              textCapitalization: TextCapitalization.sentences,
             ),
             
             const SizedBox(height: 16),
@@ -191,14 +254,15 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: const Color(0xFFF6F6F6),
-                borderRadius: BorderRadius.circular(16),
+                color: Theme.of(context).cardTheme.color,
+                borderRadius: BorderRadius.circular(24),
               ),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<ExpenseCategory>(
                   value: _selectedCategory,
                   isExpanded: true,
-                  icon: const Icon(Icons.chevron_right),
+                  dropdownColor: Theme.of(context).cardTheme.color,
+                  icon: Icon(Icons.chevron_right, color: Theme.of(context).iconTheme.color),
                   items: ExpenseCategory.values
                       .where((cat) => _transactionType == TransactionType.income 
                           ? (cat.isIncome || cat == ExpenseCategory.other) 
@@ -208,9 +272,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       value: category,
                       child: Row(
                         children: [
-                          Icon(_getCategoryIcon(category), size: 20, color: Colors.grey[700]),
+                          Image.asset(category.iconPath, width: 40, height: 40),
                           const SizedBox(width: 12),
-                          Text(category.name.toUpperCase(), style: TextStyle(color: Colors.grey[800])),
+                          Text(
+                            category.name.toUpperCase(), 
+                            style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color),
+                          ),
                         ],
                       ),
                     );
@@ -236,28 +303,55 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
             const SizedBox(height: 16),
 
-            // Date Picker Row
-            GestureDetector(
-              onTap: _presentDatePicker,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF6F6F6),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.calendar_today, color: Colors.grey, size: 20),
-                    const SizedBox(width: 12),
-                    Text(
-                      DateFormat.yMMMd().format(_selectedDate),
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            // Date & Time Pickers
+            Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: _presentDatePicker,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardTheme.color,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.calendar_today, color: Colors.grey, size: 20),
+                          const SizedBox(width: 12),
+                          Text(
+                            DateFormat.yMMMd().format(_selectedDate),
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Theme.of(context).textTheme.bodyLarge?.color),
+                          ),
+                        ],
+                      ),
                     ),
-                    const Spacer(),
-                    const Icon(Icons.chevron_right, color: Colors.grey),
-                  ],
+                  ),
                 ),
-              ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: _presentTimePicker,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardTheme.color,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.access_time, color: Colors.grey, size: 20),
+                          const SizedBox(width: 12),
+                          Text(
+                            _selectedTime.format(context),
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Theme.of(context).textTheme.bodyLarge?.color),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
 
             const SizedBox(height: 24),
@@ -279,10 +373,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         width: 60,
                         height: 60,
                         decoration: BoxDecoration(
-                          color: isSelected ? const Color(0xFFFFF9C4) : const Color(0xFFF6F6F6), // Light yellow vs Light grey
+                          color: isSelected ? const Color(0xFFC6F432) : Theme.of(context).cardTheme.color, // Lime Green vs Dark Grey
                           shape: BoxShape.rectangle,
                           borderRadius: BorderRadius.circular(16),
-                          border: isSelected ? Border.all(color: const Color(0xFFFDD835), width: 2) : null,
+                          // border: isSelected ? Border.all(color: const Color(0xFFC6F432), width: 2) : null,
                         ),
                         child: Icon(
                           _getPaymentIcon(mode),
@@ -295,7 +389,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          color: isSelected ? Colors.black : Colors.grey,
+                          color: isSelected ? Theme.of(context).textTheme.bodyMedium?.color : Colors.grey[600],
                         ),
                       ),
                     ],
@@ -307,12 +401,28 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             const SizedBox(height: 32),
             
             // Save Button
-            SizedBox(
+            Container(
               width: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(30),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFC6F432), Color(0xFFAEE010)], // Lime Green Gradient
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFC6F432).withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
               child: ElevatedButton(
                 onPressed: _submitData,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFDD835),
+                  backgroundColor: Colors.transparent, // Transparent for gradient
+                  shadowColor: Colors.transparent, // Remove button shadow
                   foregroundColor: Colors.black,
                   padding: const EdgeInsets.symmetric(vertical: 18),
                   shape: RoundedRectangleBorder(
@@ -329,6 +439,49 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           ],
         ),
       ),
+      ),
+    );
+  }
+
+  Widget _buildToggleOption(TransactionType type, IconData icon) {
+    final isSelected = _transactionType == type;
+    return GestureDetector(
+      onTap: () {
+          setState(() {
+            _transactionType = type;
+            // Reset category if it doesn't match new type
+            if (_transactionType == TransactionType.income) {
+                if (!_selectedCategory.isIncome && _selectedCategory != ExpenseCategory.other) {
+                    _selectedCategory = ExpenseCategory.freelance;
+                }
+            } else {
+                if (_selectedCategory.isIncome) {
+                    _selectedCategory = ExpenseCategory.shopping;
+                }
+            }
+          });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFC6F432) : Colors.transparent,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: isSelected ? Colors.black : Colors.grey),
+            const SizedBox(width: 8),
+            Text(
+              type.name.replaceFirst(type.name[0], type.name[0].toUpperCase()),
+              style: TextStyle(
+                color: isSelected ? Colors.black : Colors.grey,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -336,48 +489,29 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     required TextEditingController controller,
     required String hint,
     required IconData icon,
+    TextCapitalization textCapitalization = TextCapitalization.none,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFFF6F6F6),
-        borderRadius: BorderRadius.circular(16),
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(24),
       ),
       child: TextField(
         controller: controller,
+        style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
+        textCapitalization: textCapitalization,
         decoration: InputDecoration(
           border: InputBorder.none,
           hintText: hint,
+          hintStyle: TextStyle(color: Colors.grey[600]),
           icon: Icon(icon, color: Colors.grey, size: 20),
         ),
       ),
     );
   }
 
-  IconData _getCategoryIcon(ExpenseCategory category) {
-     switch (category) {
-      case ExpenseCategory.food:
-        return Icons.fastfood_outlined;
-      case ExpenseCategory.transport:
-        return Icons.directions_bus_outlined;
-      case ExpenseCategory.entertainment:
-        return Icons.movie_outlined;
-      case ExpenseCategory.bills:
-        return Icons.receipt_long_outlined;
-      case ExpenseCategory.shopping:
-        return Icons.shopping_bag_outlined;
-      case ExpenseCategory.health:
-        return Icons.local_hospital_outlined;
-      case ExpenseCategory.education:
-        return Icons.school_outlined;
-      case ExpenseCategory.salary:
-        return Icons.attach_money;
-      case ExpenseCategory.investment:
-        return Icons.trending_up;
-      case ExpenseCategory.other:
-        return Icons.category_outlined;
-    }
-  }
+
 
   IconData _getPaymentIcon(PaymentMode mode) {
     switch (mode) {

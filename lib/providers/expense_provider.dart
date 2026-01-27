@@ -45,6 +45,41 @@ class ExpenseProvider with ChangeNotifier {
     return totals;
   }
 
+  // Helper to filter transactions
+  List<Transaction> getFilteredTransactions(String filterType, DateTime selectedDate) {
+    return _transactions.where((tx) {
+      if (filterType == 'Day') {
+        return tx.date.year == selectedDate.year &&
+            tx.date.month == selectedDate.month &&
+            tx.date.day == selectedDate.day;
+      } else if (filterType == 'Month') {
+        return tx.date.year == selectedDate.year &&
+            tx.date.month == selectedDate.month;
+      } else if (filterType == 'Year') {
+        return tx.date.year == selectedDate.year;
+      }
+      return true;
+    }).toList();
+  }
+
+  double getPeriodIncome(String filterType, DateTime selectedDate) {
+    return getFilteredTransactions(filterType, selectedDate)
+        .where((tx) => tx.type == TransactionType.income)
+        .fold(0.0, (sum, item) => sum + item.amount);
+  }
+
+  double getPeriodExpense(String filterType, DateTime selectedDate) {
+    return getFilteredTransactions(filterType, selectedDate)
+        .where((tx) => tx.type == TransactionType.expense)
+        .fold(0.0, (sum, item) => sum + item.amount);
+  }
+
+  double getPeriodBalance(String filterType, DateTime selectedDate) {
+    double income = getPeriodIncome(filterType, selectedDate);
+    double expense = getPeriodExpense(filterType, selectedDate);
+    return income - expense;
+  }
+
   void addTransaction(Transaction tx) {
     _transactions.add(tx);
     notifyListeners();
