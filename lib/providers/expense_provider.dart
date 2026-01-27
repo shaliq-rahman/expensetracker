@@ -1,11 +1,48 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart' hide Transaction;
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:expense_tracker/models/transaction.dart';
 import 'package:expense_tracker/models/category.dart';
 
 class ExpenseProvider with ChangeNotifier {
-  final List<Transaction> _transactions = [];
+  List<Transaction> _transactions = [];
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  StreamSubscription? _subscription;
 
   List<Transaction> get transactions => _transactions;
+
+  // Start listening to real-time updates
+  void fetchTransactions() {
+    final user = _auth.currentUser;
+    if (user == null) {
+      _transactions = [];
+      notifyListeners();
+      return;
+    }
+
+    _subscription?.cancel();
+    _subscription = _firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('transactions')
+        .orderBy('date', descending: true)
+        .snapshots()
+        .listen((snapshot) {
+      _transactions = snapshot.docs.map((doc) {
+        return Transaction.fromMap(doc.data());
+      }).toList();
+      notifyListeners();
+    });
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
 
   double get totalBalance {
     double income = 0;
@@ -80,13 +117,52 @@ class ExpenseProvider with ChangeNotifier {
     return income - expense;
   }
 
-  void addTransaction(Transaction tx) {
-    _transactions.add(tx);
-    notifyListeners();
+  Future<void> addTransaction(Transaction tx) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('transactions')
+          .doc(tx.id)
+          .set(tx.toMap());
+      
+      await FirebaseAnalytics.instance.logEvent(
+        name: 'add_transaction',
+        parameters: {
+          'amount': tx.amount,
+          'category': tx.category.name,
+          'type': tx.type.name,
+        },
+      );
+      // Local update is handled by stream listener
+    } catch (e) {
+      print('Error adding transaction: $e');
+      rethrow;
+    }
   }
 
-  void deleteTransaction(String id) {
-    _transactions.removeWhere((tx) => tx.id == id);
-    notifyListeners();
+  Future<void> deleteTransaction(String id) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('transactions')
+          .doc(id)
+          .delete();
+
+      await FirebaseAnalytics.instance.logEvent(
+        name: 'delete_transaction',
+      );
+      // Local update is handled by stream listener
+    } catch (e) {
+      print('Error deleting transaction: $e');
+      rethrow;
+    }
   }
 }

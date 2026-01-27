@@ -5,7 +5,9 @@ import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:expense_tracker/models/transaction.dart';
 import 'package:expense_tracker/models/category.dart';
 import 'package:expense_tracker/providers/theme_provider.dart';
-
+import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:expense_tracker/screens/add_transaction_screen.dart';
+import 'package:expense_tracker/widgets/custom_snackbar.dart';
 class HomeScreen extends StatefulWidget {
   final VoidCallback onAddExpense;
   final VoidCallback onViewAll;
@@ -270,85 +272,115 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    final reversedList = List<Transaction>.from(transactions.reversed);
-
     return ListView.builder(
       physics: const NeverScrollableScrollPhysics(),
       shrinkWrap: true,
-      itemCount: reversedList.length,
+      itemCount: transactions.length,
       itemBuilder: (context, index) {
-        final tx = reversedList[index];
+        final tx = transactions[index];
         final isIncome = tx.type == TransactionType.income;
         
-        return Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardTheme.color,
-            borderRadius: BorderRadius.circular(24),
-          ),
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              // Avatar / Icon
-              Container(
-                width: 70,
-                height: 70,
-                decoration: const BoxDecoration(
-                  color: Colors.transparent, // Semi-transparent bg to let icon shine
-                  shape: BoxShape.circle,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Image.asset(tx.category.iconPath),
-                ),
-              ),
-              const SizedBox(width: 16),
-              
-              // Details
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      tx.title,
-                      style: TextStyle(
-                        fontFamily: 'Outfit', // Ensure font is used if available or default
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+        return Padding(
+          key: ValueKey(tx.id),
+          padding: const EdgeInsets.only(bottom: 16),
+          child: Slidable(
+            endActionPane: ActionPane(
+              motion: const ScrollMotion(),
+              extentRatio: 0.5, // Adjust width of actions to be reasonable
+              children: [
+                SlidableAction(
+                  onPressed: (context) {
+                     Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => AddTransactionScreen(transaction: tx),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      DateFormat.yMMMd().add_jm().format(tx.date),
-                      style: TextStyle(color: Colors.grey[600], fontSize: 13),
-                    ),
-                  ],
+                    );
+                  },
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: Colors.white,
+                  icon: Icons.edit,
+                  label: 'Edit',
                 ),
+                SlidableAction(
+                  onPressed: (context) {
+                     provider.deleteTransaction(tx.id);
+                     CustomSnackBar.show(context, 'Transaction deleted');
+                  },
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: const Color(0xFFFE4A49),
+                  icon: Icons.delete,
+                  label: 'Delete',
+                ),
+              ],
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardTheme.color,
+                borderRadius: BorderRadius.circular(24),
               ),
-              
-              // Amount
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+              padding: const EdgeInsets.all(16),
+              child: Row(
                 children: [
-                   // Color Coded Amount: Green for Income, Red for Expense
-                  Text(
-                    '${isIncome ? '+' : '-'} ${NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2).format(tx.amount)}',
-                    style: TextStyle(
-                      color: isIncome ? const Color(0xFF00C853) : Theme.of(context).textTheme.bodyLarge?.color,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                  // Avatar / Icon
+                  Container(
+                    width: 70,
+                    height: 70,
+                    decoration: const BoxDecoration(
+                      color: Colors.transparent,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Image.asset(tx.category.iconPath),
                     ),
                   ),
-                  const SizedBox(height: 4),
-                   // Optional subtext in design (e.g. converted currency), skipping for now or placeholder
-                   Text(
-                     isIncome ? 'Received' : 'Spent',
-                     style: TextStyle(color: Colors.grey[600], fontSize: 11),
-                   ),
+                  const SizedBox(width: 16),
+                  
+                  // Details
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          tx.title,
+                          style: TextStyle(
+                            fontFamily: 'Outfit',
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          DateFormat.yMMMd().add_jm().format(tx.date),
+                          style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  // Amount
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '${isIncome ? '+' : '-'} ${NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2).format(tx.amount)}',
+                        style: TextStyle(
+                          color: isIncome ? const Color(0xFF00C853) : Theme.of(context).textTheme.bodyLarge?.color,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        isIncome ? 'Received' : 'Spent',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 11),
+                      ),
+                    ],
+                  ),
                 ],
               ),
-            ],
+            ),
           ),
         );
       },

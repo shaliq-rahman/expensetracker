@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "172533963248",
+    "project_id": "expense-tracker-18599",
+    "storage_bucket": "expense-tracker-18599.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:172533963248:android:172ea2b0e1b7c99c596535",
+        "android_client_info": {
+          "package_name": "com.xtrack.finance"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAelYF1nJFj2_R_dq80df7uRoqQdp4jJyA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:172533963248:android:d7573009b1ee1a5c596535",
+        "android_client_info": {
+          "package_name": "com.xtrackandroid.finance"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAelYF1nJFj2_R_dq80df7uRoqQdp4jJyA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

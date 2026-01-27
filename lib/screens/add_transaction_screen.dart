@@ -7,8 +7,12 @@ import 'package:expense_tracker/models/transaction.dart';
 import 'package:expense_tracker/models/category.dart';
 import 'package:expense_tracker/widgets/gradient_background.dart';
 
+import 'package:expense_tracker/widgets/custom_snackbar.dart';
+
 class AddTransactionScreen extends StatefulWidget {
-  const AddTransactionScreen({super.key});
+  final Transaction? transaction;
+
+  const AddTransactionScreen({super.key, this.transaction});
 
   @override
   State<AddTransactionScreen> createState() => _AddTransactionScreenState();
@@ -20,6 +24,22 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   final _noteController = TextEditingController();
 
   final _amountFormat = NumberFormat.decimalPattern('en_IN');
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.transaction != null) {
+      final tx = widget.transaction!;
+      _titleController.text = tx.title;
+      _amountController.text = _amountFormat.format(tx.amount);
+      _noteController.text = tx.note ?? '';
+      _selectedDate = tx.date;
+      _selectedTime = TimeOfDay.fromDateTime(tx.date);
+      _selectedCategory = tx.category;
+      _transactionType = tx.type;
+      _selectedPaymentMode = tx.paymentMode;
+    }
+  }
 
   void _onAmountChanged(String value) {
       if (value.isEmpty) return;
@@ -128,9 +148,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
     if (enteredTitle.isEmpty || enteredAmount == null || enteredAmount <= 0) {
       // Show error snackbar?
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid amount and title.')),
-      );
+      CustomSnackBar.show(context, 'Please enter a valid amount and title.', isError: true);
       return;
     }
 
@@ -149,9 +167,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
     Provider.of<ExpenseProvider>(context, listen: false).addTransaction(
       Transaction(
-        title: capitalizedTitle, // User creates title like "Dinner" but usually selects category. 
-                             // In this design, title seems to be "Food" (category name) or custom.
-                             // We'll use the title input for now.
+        id: widget.transaction?.id, // Preserve ID if editing
+        title: capitalizedTitle,
         amount: enteredAmount,
         date: combinedDateTime,
         category: _selectedCategory,
@@ -180,7 +197,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           icon: Icon(Icons.arrow_back, color: Theme.of(context).iconTheme.color),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Text('Add Expense', style: Theme.of(context).appBarTheme.titleTextStyle),
+        title: Text(
+          widget.transaction == null ? 'Add Expense' : 'Edit Expense', 
+          style: Theme.of(context).appBarTheme.titleTextStyle
+        ),
         actions: [
           IconButton(
             icon: Icon(Icons.more_horiz, color: Theme.of(context).iconTheme.color),
@@ -430,9 +450,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   ),
                   elevation: 0,
                 ),
-                child: const Text(
-                  'Save Expense',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                child: Text(
+                  widget.transaction == null ? 'Save Expense' : 'Update Expense',
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
