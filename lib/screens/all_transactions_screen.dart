@@ -40,13 +40,13 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
         title: const Text('Transaction History'),
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         elevation: 0,
-        centerTitle: false,
+        centerTitle: true,
+        titleTextStyle: Theme.of(context).appBarTheme.titleTextStyle?.copyWith(fontSize: 18),
         leading: ScaleButton(
           onTap: () => Navigator.of(context).pop(),
           child: Icon(Icons.arrow_back, color: Theme.of(context).appBarTheme.iconTheme?.color),
         ),
         iconTheme: Theme.of(context).appBarTheme.iconTheme,
-        titleTextStyle: Theme.of(context).appBarTheme.titleTextStyle,
         actions: [
             // Filter dropdown in AppBar
             ScaleButton(

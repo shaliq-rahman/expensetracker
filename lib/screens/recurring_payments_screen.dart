@@ -40,7 +40,8 @@ class _RecurringPaymentsScreenState extends State<RecurringPaymentsScreen> {
             onTap: () => Navigator.of(context).pop(),
             child: Icon(Icons.arrow_back, color: theme.iconTheme.color),
           ),
-          title: Text('Recurring Payments', style: theme.appBarTheme.titleTextStyle),
+          centerTitle: true,
+          title: Text('Recurring Payments', style: theme.appBarTheme.titleTextStyle?.copyWith(fontSize: 18)),
         ),
         floatingActionButton: SafeArea(
           child: ScaleButton(
@@ -191,7 +192,7 @@ class _RecurringPaymentsScreenState extends State<RecurringPaymentsScreen> {
                   ),
                 );
               },
-              backgroundColor: Colors.blueAccent, // Solid Blue
+              backgroundColor: Colors.transparent,
               foregroundColor: Colors.white,
               icon: Icons.edit,
               label: 'Edit',
@@ -223,8 +224,8 @@ class _RecurringPaymentsScreenState extends State<RecurringPaymentsScreen> {
                     ),
                   );
               },
-              backgroundColor: const Color(0xFFFE4A49), // Solid Red
-              foregroundColor: Colors.white,
+              backgroundColor: Colors.transparent,
+              foregroundColor: const Color(0xFFFE4A49),
               icon: Icons.delete,
               label: 'Delete',
               borderRadius: const BorderRadius.horizontal(right: Radius.circular(24)),

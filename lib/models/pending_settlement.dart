@@ -35,6 +35,7 @@ class PendingSettlement {
   final List<SettlementPayment> paymentHistory;
   final String toWhom;
   final DateTime expectedClosingDate;
+  final DateTime borrowedDate;
   final bool isSettled;
   final String type; // 'Person' or 'Card'
 
@@ -45,6 +46,7 @@ class PendingSettlement {
     this.paymentHistory = const [],
     required this.toWhom,
     required this.expectedClosingDate,
+    required this.borrowedDate,
     this.isSettled = false,
     this.type = 'Person',
   });
@@ -65,6 +67,7 @@ class PendingSettlement {
       'paymentHistory': paymentHistory.map((e) => e.toMap()).toList(),
       'toWhom': toWhom,
       'expectedClosingDate': Timestamp.fromDate(expectedClosingDate),
+      'borrowedDate': Timestamp.fromDate(borrowedDate),
       'isSettled': isSettled,
       'type': type,
     };
@@ -90,6 +93,9 @@ class PendingSettlement {
       paymentHistory: history,
       toWhom: map['toWhom'] ?? '',
       expectedClosingDate: (map['expectedClosingDate'] as Timestamp).toDate(),
+      borrowedDate: map['borrowedDate'] != null 
+          ? (map['borrowedDate'] as Timestamp).toDate() 
+          : DateTime.now(), // Default to now if missing (migration)
       isSettled: map['isSettled'] ?? false,
       type: map['type'] ?? 'Person',
     );

@@ -21,6 +21,7 @@ class _AddPendingSettlementScreenState extends State<AddPendingSettlementScreen>
   final _paidAmountController = TextEditingController();
   final _toWhomController = TextEditingController();
   final _amountFormat = NumberFormat.decimalPattern('en_IN');
+  DateTime _borrowedDate = DateTime.now();
   DateTime _selectedDate = DateTime.now();
   String _selectedType = 'Person';
 
@@ -33,17 +34,11 @@ class _AddPendingSettlementScreenState extends State<AddPendingSettlementScreen>
         _amountController.text = _amountFormat.format(widget.settlement!.amount);
         _toWhomController.text = widget.settlement!.toWhom;
         _selectedDate = widget.settlement!.expectedClosingDate;
-        // Logic for paid amount in edit mode:
-        // Usually we don't edit "Paid Amount" directly in edit mode if it's a history, 
-        // but for simplicity, we might leave it empty or show separate logic. 
-        // User didn't specify. Assuming "Edit" updates core details (Title, ToWhom, Total Amount).
-        // If we change Total Amount, logic for Remaining needs to hold. 
-        // If this is a new "Paid Amount" entry, user should use the Add Payment flow.
-        // So I will disable or hide "Paid Amount" field in Edit Mode to avoid confusion, 
-        // or just let it act as "Adding Initial Payment" (which is weird in Edit).
-        // Better: Hide Paid Amount in Edit Mode.
+        _borrowedDate = widget.settlement!.borrowedDate;
     }
   }
+
+  // ... existing methods ...
 
   void _onAmountChanged(String value) {
       if (value.isEmpty) return;
@@ -60,7 +55,6 @@ class _AddPendingSettlementScreenState extends State<AddPendingSettlementScreen>
       }
   }
 
-  // _onPaidAmountChanged remains same...
   void _onPaidAmountChanged(String value) {
       if (value.isEmpty) return;
       String rawValue = value.replaceAll(',', '');
@@ -76,6 +70,29 @@ class _AddPendingSettlementScreenState extends State<AddPendingSettlementScreen>
       }
   }
 
+  Future<void> _selectBorrowedDate(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _borrowedDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+         return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Theme.of(context).primaryColor,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null && picked != _borrowedDate) {
+      setState(() {
+        _borrowedDate = picked;
+      });
+    }
+  }
 
   Future<void> _selectDate(BuildContext context) async {
     final picked = await showDatePicker(
@@ -132,6 +149,7 @@ class _AddPendingSettlementScreenState extends State<AddPendingSettlementScreen>
             paymentHistory: widget.settlement!.paymentHistory, // Keep existing history
             toWhom: enteredToWhom,
             expectedClosingDate: _selectedDate,
+            borrowedDate: _borrowedDate,
             isSettled: widget.settlement!.isSettled,
             type: _selectedType,
         );
@@ -147,6 +165,7 @@ class _AddPendingSettlementScreenState extends State<AddPendingSettlementScreen>
               : [],
           toWhom: enteredToWhom,
           expectedClosingDate: _selectedDate,
+          borrowedDate: _borrowedDate,
           type: _selectedType,
         );
         provider.addSettlement(settlement);
@@ -167,7 +186,8 @@ class _AddPendingSettlementScreenState extends State<AddPendingSettlementScreen>
             onTap: () => Navigator.of(context).pop(),
             child: Icon(Icons.arrow_back, color: Theme.of(context).iconTheme.color),
           ),
-          title: Text(isEditing ? 'Edit Settlement' : 'Add Pending Settlement', style: Theme.of(context).appBarTheme.titleTextStyle),
+          centerTitle: true,
+          title: Text(isEditing ? 'Edit Settlement' : 'Add Pending Settlement', style: Theme.of(context).appBarTheme.titleTextStyle?.copyWith(fontSize: 18)),
         ),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -270,7 +290,38 @@ class _AddPendingSettlementScreenState extends State<AddPendingSettlementScreen>
                   ),
               if (!isEditing) const SizedBox(height: 16),
  
-              // Date Picker
+              // Borrowed Date Picker
+              FadeInSlide(
+                delay: 0.25,
+                child: ScaleButton(
+                  onTap: () => _selectBorrowedDate(context),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardTheme.color,
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.calendar_today_outlined, color: Colors.grey, size: 20),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Borrowed Date: ${DateFormat('d MMM yyyy').format(_borrowedDate)}',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Theme.of(context).textTheme.bodyLarge?.color),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Expected Closing Date Picker
               FadeInSlide(
                 delay: 0.25,
                 child: ScaleButton(
@@ -283,7 +334,7 @@ class _AddPendingSettlementScreenState extends State<AddPendingSettlementScreen>
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.calendar_today, color: Colors.grey, size: 20),
+                        const Icon(Icons.event, color: Colors.grey, size: 20),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(

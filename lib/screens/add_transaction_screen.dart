@@ -186,7 +186,160 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
 
 
+  void _showCategorySelector() {
+    final categories = ExpenseCategory.values
+        .where((cat) => _transactionType == TransactionType.income 
+            ? (cat.isIncome || cat == ExpenseCategory.other) 
+            : (!cat.isIncome || cat == ExpenseCategory.other))
+        .toList()
+      ..sort((a, b) => a.name.compareTo(b.name)); // Sort alphabetically
 
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.7,
+          ),
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(32),
+              topRight: Radius.circular(32),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle bar
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[600],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              
+              // Header
+              Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Select Category',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).textTheme.titleLarge?.color,
+                      ),
+                    ),
+                    ScaleButton(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardTheme.color,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.close,
+                          color: Theme.of(context).iconTheme.color,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Category Grid
+              Flexible(
+                child: GridView.builder(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 4,
+                    childAspectRatio: 1.0, 
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                  ),
+                  itemCount: categories.length,
+                  itemBuilder: (context, index) {
+                    final category = categories[index];
+                    final isSelected = category == _selectedCategory;
+                    
+                    return ScaleButton(
+                      onTap: () {
+                        setState(() {
+                          _selectedCategory = category;
+                        });
+                        Navigator.pop(context);
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: isSelected 
+                              ? const Color(0xFFC6F432).withOpacity(0.2)
+                              : Theme.of(context).cardTheme.color,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isSelected 
+                                ? const Color(0xFFC6F432)
+                                : Colors.transparent,
+                            width: 2,
+                          ),
+                          boxShadow: isSelected
+                              ? [
+                                  BoxShadow(
+                                    color: const Color(0xFFC6F432).withOpacity(0.3),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.asset(
+                              category.iconPath,
+                              width: 48, 
+                              height: 48, 
+                            ),
+                            const SizedBox(height: 8), 
+                            Text(
+                              category.name.toUpperCase(),
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 11, 
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                                color: isSelected
+                                    ? const Color(0xFFC6F432)
+                                    : Theme.of(context).textTheme.bodyMedium?.color,
+                                fontFamily: 'Outfit',
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 20), // Bottom padding
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -200,9 +353,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           onTap: () => Navigator.of(context).pop(),
           child: Icon(Icons.arrow_back, color: Theme.of(context).iconTheme.color),
         ),
+        centerTitle: true,
         title: Text(
           widget.transaction == null ? 'Add Expense' : 'Edit Expense', 
-          style: Theme.of(context).appBarTheme.titleTextStyle
+          style: Theme.of(context).appBarTheme.titleTextStyle?.copyWith(fontSize: 18)
         ),
         actions: [
           IconButton(
@@ -281,46 +435,34 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             
             const SizedBox(height: 16),
             
-            // Category Dropdown (Custom styled)
+            // Category Selection (Custom Dialog)
             FadeInSlide(
               delay: 0.25,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardTheme.color,
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<ExpenseCategory>(
-                    value: _selectedCategory,
-                    isExpanded: true,
-                    dropdownColor: Theme.of(context).cardTheme.color,
-                    icon: Icon(Icons.chevron_right, color: Theme.of(context).iconTheme.color),
-                    items: ExpenseCategory.values
-                        .where((cat) => _transactionType == TransactionType.income 
-                            ? (cat.isIncome || cat == ExpenseCategory.other) 
-                            : (!cat.isIncome || cat == ExpenseCategory.other))
-                        .map((category) {
-                      return DropdownMenuItem(
-                        value: category,
-                        child: Row(
-                          children: [
-                            Image.asset(category.iconPath, width: 40, height: 40),
-                            const SizedBox(width: 12),
-                            Text(
-                              category.name.toUpperCase(), 
-                              style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontFamily: 'Outfit'),
-                            ),
-                          ],
+              child: ScaleButton(
+                onTap: () => _showCategorySelector(),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardTheme.color,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Row(
+                    children: [
+                      Image.asset(_selectedCategory.iconPath, width: 40, height: 40),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          _selectedCategory.name.toUpperCase(),
+                          style: TextStyle(
+                            color: Theme.of(context).textTheme.bodyMedium?.color,
+                            fontFamily: 'Outfit',
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      if (value == null) return;
-                      setState(() {
-                        _selectedCategory = value;
-                      });
-                    },
+                      ),
+                      Icon(Icons.chevron_right, color: Theme.of(context).iconTheme.color),
+                    ],
                   ),
                 ),
               ),

@@ -38,7 +38,8 @@ class _PendingSettlementsScreenState extends State<PendingSettlementsScreen> {
             onTap: () => Navigator.of(context).pop(),
             child: Icon(Icons.arrow_back, color: theme.iconTheme.color),
           ),
-          title: Text('Pending Settlements', style: theme.appBarTheme.titleTextStyle),
+          centerTitle: true,
+          title: Text('Pending Settlements', style: theme.appBarTheme.titleTextStyle?.copyWith(fontSize: 18)),
         ),
         floatingActionButton: SafeArea(
           child: ScaleButton(
@@ -189,7 +190,7 @@ class _PendingSettlementsScreenState extends State<PendingSettlementsScreen> {
                   ),
                 );
               },
-              backgroundColor: Colors.blueAccent, // Solid Blue
+              backgroundColor: Colors.transparent,
               foregroundColor: Colors.white,
               icon: Icons.edit,
               label: 'Edit',
@@ -221,8 +222,8 @@ class _PendingSettlementsScreenState extends State<PendingSettlementsScreen> {
                     ),
                   );
               },
-              backgroundColor: const Color(0xFFFE4A49), // Solid Red
-              foregroundColor: Colors.white,
+              backgroundColor: Colors.transparent,
+              foregroundColor: const Color(0xFFFE4A49),
               icon: Icons.delete,
               label: 'Delete',
               borderRadius: const BorderRadius.horizontal(right: Radius.circular(24)),
@@ -242,7 +243,11 @@ class _PendingSettlementsScreenState extends State<PendingSettlementsScreen> {
             ],
           ),
           child: Theme(
-            data: theme.copyWith(dividerColor: Colors.transparent),
+            data: theme.copyWith(
+              dividerColor: Colors.transparent,
+              splashColor: Colors.transparent,
+              highlightColor: Colors.transparent,
+            ),
             child: ExpansionTile(
               tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               childrenPadding: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
