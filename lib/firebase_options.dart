@@ -12,10 +12,7 @@ class DefaultFirebaseOptions {
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for android - '
-          'please ensure google-services.json is present or run FlutterFire CLI.',
-        );
+        return android;
       case TargetPlatform.iOS:
         return ios;
       case TargetPlatform.macOS:
@@ -47,5 +44,13 @@ class DefaultFirebaseOptions {
     projectId: 'expense-tracker-18599',
     storageBucket: 'expense-tracker-18599.firebasestorage.app',
     iosBundleId: 'xtrack',
+  );
+
+  static const FirebaseOptions android = FirebaseOptions(
+    apiKey: 'AIzaSyAelYF1nJFj2_R_dq80df7uRoqQdp4jJyA',
+    appId: '1:172533963248:android:ce121c532c511d38596535',
+    messagingSenderId: '172533963248',
+    projectId: 'expense-tracker-18599',
+    storageBucket: 'expense-tracker-18599.firebasestorage.app',
   );
 }
