@@ -27,8 +27,8 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    // Initialize FCM
-    await FCMService().initialise();
+    // Initialize FCM (don't await to prevent blocking startup)
+    FCMService().initialise();
   } catch (e) {
     print("Firebase initialization failed: $e");
   }
