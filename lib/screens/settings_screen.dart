@@ -6,6 +6,7 @@ import 'package:expense_tracker/models/user_model.dart';
 import 'package:expense_tracker/screens/edit_profile_screen.dart';
 import 'package:expense_tracker/screens/recurring_payments_screen.dart';
 import 'package:expense_tracker/screens/pending_settlements_screen.dart';
+import 'package:expense_tracker/screens/receivables_screen.dart';
 
 import 'package:expense_tracker/widgets/fade_in_slide.dart';
 import 'package:expense_tracker/widgets/scale_button.dart';
@@ -203,6 +204,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         context,
                         MaterialPageRoute(
                             builder: (context) => const PendingSettlementsScreen()),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 12),
+                FadeInSlide(
+                  delay: 0.29,
+                  child: _buildSettingsTile(
+                    context,
+                    icon: Icons.payments_outlined,
+                    title: 'Receivables',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const ReceivablesScreen()),
                       );
                     },
                   ),

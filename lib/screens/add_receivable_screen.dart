@@ -1,44 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:expense_tracker/models/pending_settlement.dart';
-import 'package:expense_tracker/providers/pending_settlement_provider.dart';
+import 'package:expense_tracker/models/receivable.dart';
+import 'package:expense_tracker/providers/receivable_provider.dart';
 import 'package:expense_tracker/widgets/scale_button.dart';
 import 'package:expense_tracker/widgets/gradient_background.dart';
 import 'package:expense_tracker/widgets/fade_in_slide.dart';
 
-class AddPendingSettlementScreen extends StatefulWidget {
-  final PendingSettlement? settlement;
-  const AddPendingSettlementScreen({super.key, this.settlement});
+class AddReceivableScreen extends StatefulWidget {
+  final Receivable? receivable;
+  const AddReceivableScreen({super.key, this.receivable});
 
   @override
-  State<AddPendingSettlementScreen> createState() => _AddPendingSettlementScreenState();
+  State<AddReceivableScreen> createState() => _AddReceivableScreenState();
 }
 
-class _AddPendingSettlementScreenState extends State<AddPendingSettlementScreen> {
+class _AddReceivableScreenState extends State<AddReceivableScreen> {
   final _titleController = TextEditingController();
   final _amountController = TextEditingController();
-  final _paidAmountController = TextEditingController();
-  final _toWhomController = TextEditingController();
+  final _receivedAmountController = TextEditingController();
+  final _fromWhomController = TextEditingController();
+  final _noteController = TextEditingController();
   final _amountFormat = NumberFormat.decimalPattern('en_IN');
-  DateTime _borrowedDate = DateTime.now();
-  DateTime _selectedDate = DateTime.now();
+  DateTime _lentDate = DateTime.now();
+  DateTime _selectedDate = DateTime.now().add(const Duration(days: 7));
   String _selectedType = 'Person';
 
   @override
   void initState() {
     super.initState();
-    if (widget.settlement != null) {
-        _selectedType = widget.settlement!.type;
-        _titleController.text = widget.settlement!.title;
-        _amountController.text = _amountFormat.format(widget.settlement!.amount);
-        _toWhomController.text = widget.settlement!.toWhom;
-        _selectedDate = widget.settlement!.expectedClosingDate;
-        _borrowedDate = widget.settlement!.borrowedDate;
+    if (widget.receivable != null) {
+        _selectedType = widget.receivable!.type;
+        _titleController.text = widget.receivable!.title;
+        _amountController.text = _amountFormat.format(widget.receivable!.amount);
+        _fromWhomController.text = widget.receivable!.fromWhom;
+        _selectedDate = widget.receivable!.expectedReturnDate;
+        _lentDate = widget.receivable!.lentDate;
+        _noteController.text = widget.receivable!.note;
     }
   }
-
-  // ... existing methods ...
 
   void _onAmountChanged(String value) {
       if (value.isEmpty) return;
@@ -55,7 +55,7 @@ class _AddPendingSettlementScreenState extends State<AddPendingSettlementScreen>
       }
   }
 
-  void _onPaidAmountChanged(String value) {
+  void _onReceivedAmountChanged(String value) {
       if (value.isEmpty) return;
       String rawValue = value.replaceAll(',', '');
       if (rawValue.isEmpty) return;
@@ -63,17 +63,17 @@ class _AddPendingSettlementScreenState extends State<AddPendingSettlementScreen>
       if (number == null) return;
       String formatted = _amountFormat.format(number);
       if (value != formatted) {
-          _paidAmountController.value = TextEditingValue(
+          _receivedAmountController.value = TextEditingValue(
               text: formatted,
               selection: TextSelection.collapsed(offset: formatted.length),
           );
       }
   }
 
-  Future<void> _selectBorrowedDate(BuildContext context) async {
+  Future<void> _selectLentDate(BuildContext context) async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: _borrowedDate,
+      initialDate: _lentDate,
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
       builder: (context, child) {
@@ -87,9 +87,9 @@ class _AddPendingSettlementScreenState extends State<AddPendingSettlementScreen>
         );
       },
     );
-    if (picked != null && picked != _borrowedDate) {
+    if (picked != null && picked != _lentDate) {
       setState(() {
-        _borrowedDate = picked;
+        _lentDate = picked;
       });
     }
   }
@@ -98,7 +98,7 @@ class _AddPendingSettlementScreenState extends State<AddPendingSettlementScreen>
     final picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
-      firstDate: DateTime(2020), // Allow past dates for editing
+      firstDate: DateTime(2020),
       lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
       builder: (context, child) {
          return Theme(
@@ -118,11 +118,11 @@ class _AddPendingSettlementScreenState extends State<AddPendingSettlementScreen>
     }
   }
 
-  void _saveSettlement() {
+  void _saveReceivable() {
     final enteredTitle = _titleController.text;
     final enteredAmount = double.tryParse(_amountController.text.replaceAll(',', ''));
-    final enteredPaidAmount = double.tryParse(_paidAmountController.text.replaceAll(',', '')) ?? 0.0;
-    final enteredToWhom = _toWhomController.text;
+    final enteredReceivedAmount = double.tryParse(_receivedAmountController.text.replaceAll(',', '')) ?? 0.0;
+    final enteredFromWhom = _fromWhomController.text;
 
     if (enteredTitle.isEmpty || enteredAmount == null || enteredAmount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -131,51 +131,55 @@ class _AddPendingSettlementScreenState extends State<AddPendingSettlementScreen>
       return;
     }
 
-    if (enteredToWhom.isEmpty) {
+    if (enteredFromWhom.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Please enter who this settlement is for.')),
+            const SnackBar(content: Text('Please enter who this receivable is from.')),
         );
         return;
     }
 
-    final provider = Provider.of<PendingSettlementProvider>(context, listen: false);
+    final provider = Provider.of<ReceivableProvider>(context, listen: false);
 
-    if (widget.settlement != null) {
+    if (widget.receivable != null) {
         // Update Logic
-        final updatedSettlement = PendingSettlement(
-            id: widget.settlement!.id,
+        final updatedReceivable = Receivable(
+            id: widget.receivable!.id,
             title: enteredTitle,
             amount: enteredAmount,
-            paymentHistory: widget.settlement!.paymentHistory, // Keep existing history
-            toWhom: enteredToWhom,
-            expectedClosingDate: _selectedDate,
-            borrowedDate: _borrowedDate,
-            isSettled: widget.settlement!.isSettled,
+            paymentHistory: widget.receivable!.paymentHistory,
+            settlementHistory: widget.receivable!.settlementHistory,
+            fromWhom: enteredFromWhom,
+            expectedReturnDate: _selectedDate,
+            lentDate: _lentDate,
+            isSettled: widget.receivable!.isSettled,
             type: _selectedType,
+            note: _noteController.text.trim(),
         );
-        provider.updateSettlement(updatedSettlement);
+        provider.updateReceivable(updatedReceivable);
     } else {
         // Create Logic
-        final settlement = PendingSettlement(
+        final receivable = Receivable(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
           title: enteredTitle,
           amount: enteredAmount,
-          paymentHistory: enteredPaidAmount > 0 
-              ? [SettlementPayment(amount: enteredPaidAmount, date: DateTime.now())]
+          paymentHistory: [],
+          settlementHistory: enteredReceivedAmount > 0 
+              ? [ReceivableSettlement(amount: enteredReceivedAmount, date: DateTime.now(), note: _noteController.text.trim())]
               : [],
-          toWhom: enteredToWhom,
-          expectedClosingDate: _selectedDate,
-          borrowedDate: _borrowedDate,
+          fromWhom: enteredFromWhom,
+          expectedReturnDate: _selectedDate,
+          lentDate: _lentDate,
           type: _selectedType,
+          note: _noteController.text.trim(),
         );
-        provider.addSettlement(settlement);
+        provider.addReceivable(receivable);
     }
     Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
-    bool isEditing = widget.settlement != null;
+    bool isEditing = widget.receivable != null;
     return GradientBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
@@ -187,7 +191,7 @@ class _AddPendingSettlementScreenState extends State<AddPendingSettlementScreen>
             child: Icon(Icons.arrow_back, color: Theme.of(context).iconTheme.color),
           ),
           centerTitle: true,
-          title: Text(isEditing ? 'Edit Settlement' : 'Add Pending Settlement', style: Theme.of(context).appBarTheme.titleTextStyle?.copyWith(fontSize: 18)),
+          title: Text(isEditing ? 'Edit Receivable' : 'Add Receivable', style: Theme.of(context).appBarTheme.titleTextStyle?.copyWith(fontSize: 18)),
         ),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -245,26 +249,26 @@ class _AddPendingSettlementScreenState extends State<AddPendingSettlementScreen>
                 delay: 0.1,
                 child: _buildInputField(
                   controller: _titleController,
-                  hint: 'Title (e.g. Dinner)',
+                  hint: 'Title (e.g. Loan)',
                   icon: Icons.edit,
                   textCapitalization: TextCapitalization.sentences,
                 ),
               ),
               const SizedBox(height: 16),
               
-              // To Whom
+              // From Whom
               FadeInSlide(
                 delay: 0.15,
                 child: _buildInputField(
-                  controller: _toWhomController,
-                  hint: 'To Whom (e.g. John)',
+                  controller: _fromWhomController,
+                  hint: 'From Whom (e.g. John)',
                   icon: Icons.person_outline,
                   textCapitalization: TextCapitalization.words,
                 ),
               ),
               const SizedBox(height: 16),
               
-              // Paid Amount - Hide in Edit Mode
+              // Received Amount - Hide in Edit Mode
               if (!isEditing)
                   FadeInSlide(
                     delay: 0.2,
@@ -275,26 +279,51 @@ class _AddPendingSettlementScreenState extends State<AddPendingSettlementScreen>
                         borderRadius: BorderRadius.circular(24),
                       ),
                       child: TextField(
-                        controller: _paidAmountController,
+                        controller: _receivedAmountController,
                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                         onChanged: _onPaidAmountChanged,
+                         onChanged: _onReceivedAmountChanged,
                         style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontFamily: 'Outfit'),
                         decoration: InputDecoration(
                           border: InputBorder.none,
-                          hintText: 'Paid Amount (Optional)',
+                          hintText: 'Received Amount (Optional)',
                           hintStyle: TextStyle(color: Colors.grey[600]),
                           icon: const Icon(Icons.money_off, color: Colors.grey, size: 20),
                         ),
                       ),
                     ),
                   ),
+              
+              const SizedBox(height: 16),
+              
+              // Note Field
+              FadeInSlide(
+                delay: 0.25,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardTheme.color,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: TextField(
+                    controller: _noteController,
+                    textCapitalization: TextCapitalization.sentences,
+                    style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontFamily: 'Outfit'),
+                    decoration: InputDecoration(
+                      border: InputBorder.none,
+                      hintText: 'Note (Optional)',
+                      hintStyle: TextStyle(color: Colors.grey[600]),
+                      icon: const Icon(Icons.note_alt_outlined, color: Colors.grey, size: 20),
+                    ),
+                  ),
+                ),
+              ),
               if (!isEditing) const SizedBox(height: 16),
  
-              // Borrowed Date Picker
+              // Lent Date Picker
               FadeInSlide(
                 delay: 0.25,
                 child: ScaleButton(
-                  onTap: () => _selectBorrowedDate(context),
+                  onTap: () => _selectLentDate(context),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                     decoration: BoxDecoration(
@@ -307,7 +336,7 @@ class _AddPendingSettlementScreenState extends State<AddPendingSettlementScreen>
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            'Borrowed Date: ${DateFormat('d MMM yyyy').format(_borrowedDate)}',
+                            'Lent Date: ${DateFormat('d MMM yyyy').format(_lentDate)}',
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Theme.of(context).textTheme.bodyLarge?.color),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -321,7 +350,7 @@ class _AddPendingSettlementScreenState extends State<AddPendingSettlementScreen>
               ),
               const SizedBox(height: 16),
 
-              // Expected Closing Date Picker
+              // Expected Return Date Picker
               FadeInSlide(
                 delay: 0.25,
                 child: ScaleButton(
@@ -338,7 +367,7 @@ class _AddPendingSettlementScreenState extends State<AddPendingSettlementScreen>
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            'Expected Closing: ${DateFormat('d MMM yyyy').format(_selectedDate)}',
+                            'Expected Return: ${DateFormat('d MMM yyyy').format(_selectedDate)}',
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Theme.of(context).textTheme.bodyLarge?.color),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -357,7 +386,7 @@ class _AddPendingSettlementScreenState extends State<AddPendingSettlementScreen>
               FadeInSlide(
                 delay: 0.3,
                 child: ScaleButton(
-                  onTap: _saveSettlement,
+                  onTap: _saveReceivable,
                   child: Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
@@ -379,7 +408,7 @@ class _AddPendingSettlementScreenState extends State<AddPendingSettlementScreen>
                       padding: const EdgeInsets.symmetric(vertical: 18),
                       child: Center(
                         child: Text(
-                          isEditing ? 'Update Settlement' : 'Save Settlement',
+                          isEditing ? 'Update Receivable' : 'Save Receivable',
                           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
                         ),
                       ),

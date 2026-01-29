@@ -1,18 +1,21 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SettlementPayment {
+  final String id;
   final double amount;
   final DateTime date;
   final String note;
 
   SettlementPayment({
+    String? id,
     required this.amount,
     required this.date,
     this.note = '',
-  });
+  }) : id = id ?? DateTime.now().microsecondsSinceEpoch.toString();
 
   Map<String, dynamic> toMap() {
     return {
+      'id': id,
       'amount': amount,
       'date': Timestamp.fromDate(date),
       'note': note,
@@ -21,6 +24,7 @@ class SettlementPayment {
 
   factory SettlementPayment.fromMap(Map<String, dynamic> map) {
     return SettlementPayment(
+      id: map['id'], // If null, constructor generates one
       amount: (map['amount'] ?? 0).toDouble(),
       date: (map['date'] as Timestamp).toDate(),
       note: map['note'] ?? '',

@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:expense_tracker/providers/recurring_payment_provider.dart';
 import 'package:expense_tracker/providers/pending_settlement_provider.dart';
+import 'package:expense_tracker/providers/receivable_provider.dart';
 import 'package:expense_tracker/screens/home_screen.dart';
 import 'package:expense_tracker/screens/analytics_screen.dart';
 import 'package:expense_tracker/screens/add_transaction_screen.dart';
@@ -39,6 +40,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => RecurringPaymentProvider()),
         ChangeNotifierProvider(create: (_) => PendingSettlementProvider()),
+        ChangeNotifierProvider(create: (_) => ReceivableProvider()),
       ],
       child: const MyApp(),
     ),

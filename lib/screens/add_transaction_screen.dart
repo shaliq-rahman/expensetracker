@@ -627,46 +627,68 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   Widget _buildToggleOption(TransactionType type, IconData icon) {
-    final isSelected = _transactionType == type;
-    return ScaleButton(
-      onTap: () {
-          setState(() {
-            _transactionType = type;
-            // Reset category if it doesn't match new type
-            if (_transactionType == TransactionType.income) {
-                if (!_selectedCategory.isIncome && _selectedCategory != ExpenseCategory.other) {
-                    _selectedCategory = ExpenseCategory.freelance;
-                }
-            } else {
-                if (_selectedCategory.isIncome) {
-                    _selectedCategory = ExpenseCategory.shopping;
-                }
-            }
-          });
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFC6F432) : Colors.transparent,
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 20, color: isSelected ? Colors.black : Colors.grey),
-            const SizedBox(width: 8),
-            Text(
-              type.name.replaceFirst(type.name[0], type.name[0].toUpperCase()),
-              style: TextStyle(
-                color: isSelected ? Colors.black : Colors.grey,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
+  final isSelected = _transactionType == type;
+  return ScaleButton(
+    onTap: () {
+        setState(() {
+          _transactionType = type;
+          // Reset category if it doesn't match new type
+          if (_transactionType == TransactionType.income) {
+              if (!_selectedCategory.isIncome && _selectedCategory != ExpenseCategory.other) {
+                  _selectedCategory = ExpenseCategory.freelance;
+              }
+          } else {
+              if (_selectedCategory.isIncome) {
+                  _selectedCategory = ExpenseCategory.shopping;
+              }
+          }
+        });
+    },
+    child: AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeInOutCubic,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      decoration: BoxDecoration(
+        color: isSelected ? const Color(0xFFC6F432) : Colors.transparent,
+        borderRadius: BorderRadius.circular(24),
       ),
-    );
-  }
+      child: Row(
+        children: [
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 150),
+            transitionBuilder: (child, animation) {
+              return FadeTransition(
+                opacity: animation,
+                child: ScaleTransition(
+                  scale: animation,
+                  child: child,
+                ),
+              );
+            },
+            child: Icon(
+              icon,
+              key: ValueKey('${type.name}_icon_$isSelected'),
+              size: 20,
+              color: isSelected ? Colors.black : Colors.grey,
+            ),
+          ),
+          const SizedBox(width: 8),
+          AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeInOut,
+            style: TextStyle(
+              color: isSelected ? Colors.black : Colors.grey,
+              fontWeight: FontWeight.bold,
+            ),
+            child: Text(
+              type.name.replaceFirst(type.name[0], type.name[0].toUpperCase()),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
 
   Widget _buildInputField({
     required TextEditingController controller,
