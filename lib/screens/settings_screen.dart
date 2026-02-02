@@ -7,6 +7,7 @@ import 'package:expense_tracker/screens/edit_profile_screen.dart';
 import 'package:expense_tracker/screens/recurring_payments_screen.dart';
 import 'package:expense_tracker/screens/pending_settlements_screen.dart';
 import 'package:expense_tracker/screens/receivables_screen.dart';
+import 'package:expense_tracker/screens/files_screen.dart';
 
 import 'package:expense_tracker/widgets/fade_in_slide.dart';
 import 'package:expense_tracker/widgets/scale_button.dart';
@@ -229,6 +230,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   delay: 0.3,
                   child: _buildSettingsTile(
                     context,
+                    icon: Icons.folder_open,
+                    title: 'Files',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const FilesScreen()),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 12),
+                FadeInSlide(
+                  delay: 0.32,
+                  child: _buildSettingsTile(
+                    context,
                     icon: Icons.security_outlined,
                     title: 'Security',
                     onTap: () {},
@@ -236,7 +253,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const SizedBox(height: 12),
                 FadeInSlide(
-                  delay: 0.35,
+                  delay: 0.34,
                   child: _buildSettingsTile(
                     context,
                     icon: Icons.help_outline,

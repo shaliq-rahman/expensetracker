@@ -7,6 +7,7 @@ import 'package:expense_tracker/models/category.dart';
 import 'package:expense_tracker/providers/theme_provider.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:expense_tracker/screens/add_transaction_screen.dart';
+import 'package:expense_tracker/screens/edit_profile_screen.dart';
 import 'package:expense_tracker/widgets/custom_snackbar.dart';
 import 'package:expense_tracker/widgets/fade_in_slide.dart';
 import 'package:expense_tracker/widgets/scale_button.dart';
@@ -50,42 +51,52 @@ class _HomeScreenState extends State<HomeScreen> {
         leadingWidth: 200,
         leading: Padding(
           padding: const EdgeInsets.only(left: 16.0),
-          child: Row(
-            children: [
-              ScaleButton(
-                onTap: () {
-                  // Navigate to profile screen
-                },
-                child: CircleAvatar(
-                  radius: 20,
-                  backgroundColor: Theme.of(context).brightness == Brightness.dark 
-                      ? const Color(0xFFC6F432)
-                      : Theme.of(context).cardTheme.color,
-                  child: Icon(
-                    Icons.person,
-                    color: Theme.of(context).brightness == Brightness.dark 
-                        ? Colors.black 
-                        : Theme.of(context).iconTheme.color,
-                    size: 24,
+          child: StreamBuilder<DocumentSnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('users')
+                .doc(FirebaseAuth.instance.currentUser?.uid)
+                .snapshots(),
+            builder: (context, snapshot) {
+              String displayName = 'User';
+              String? photoUrl;
+              
+              if (snapshot.hasData && snapshot.data?.data() != null) {
+                final data = snapshot.data!.data() as Map<String, dynamic>;
+                displayName = data['displayName'] ?? 'User';
+                photoUrl = data['photoUrl'];
+              }
+              
+              return Row(
+                children: [
+                  ScaleButton(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const EditProfileScreen()),
+                      );
+                    },
+                    child: CircleAvatar(
+                      radius: 20,
+                      backgroundColor: Theme.of(context).brightness == Brightness.dark 
+                          ? const Color(0xFFC6F432)
+                          : Theme.of(context).cardTheme.color,
+                      backgroundImage: photoUrl != null
+                          ? NetworkImage(photoUrl)
+                          : null,
+                      child: photoUrl == null 
+                        ? Icon(
+                            Icons.person,
+                            color: Theme.of(context).brightness == Brightness.dark 
+                                ? Colors.black 
+                                : Theme.of(context).iconTheme.color,
+                            size: 24,
+                          )
+                        : null,
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: StreamBuilder<DocumentSnapshot>(
-                  stream: FirebaseFirestore.instance
-                      .collection('users')
-                      .doc(FirebaseAuth.instance.currentUser?.uid)
-                      .snapshots(),
-                  builder: (context, snapshot) {
-                    String displayName = 'User';
-                    
-                    if (snapshot.hasData && snapshot.data?.data() != null) {
-                      final data = snapshot.data!.data() as Map<String, dynamic>;
-                      displayName = data['displayName'] ?? 'User';
-                    }
-                    
-                    return Column(
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -99,11 +110,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ],
-                    );
-                  },
-                ),
-              ),
-            ],
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ),
         actions: [

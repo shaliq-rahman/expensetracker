@@ -46,32 +46,40 @@ class FCMService {
   }
 
   Future<String?> getToken() async {
-    if (defaultTargetPlatform == TargetPlatform.iOS) {
-      // Retry getting APNS token up to 3 times
-      for (int i = 0; i < 3; i++) {
-        String? apnsToken = await _firebaseMessaging.getAPNSToken();
-        if (apnsToken != null) {
-          if (kDebugMode) {
-             print('APNS Token retrieved: $apnsToken');
+    try {
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        // Retry getting APNS token up to 3 times
+        for (int i = 0; i < 3; i++) {
+          String? apnsToken = await _firebaseMessaging.getAPNSToken();
+          if (apnsToken != null) {
+            if (kDebugMode) {
+               print('APNS Token retrieved: $apnsToken');
+            }
+            break; // Found it!
           }
-          break; // Found it!
+          
+          if (kDebugMode) {
+             print('APNS Token not available yet. Retrying in 3 seconds... (Attempt ${i + 1}/3)');
+          }
+          await Future.delayed(const Duration(seconds: 3));
         }
         
-        if (kDebugMode) {
-           print('APNS Token not available yet. Retrying in 3 seconds... (Attempt ${i + 1}/3)');
+        String? apnsToken = await _firebaseMessaging.getAPNSToken();
+        if (apnsToken == null) {
+          if (kDebugMode) {
+             print('APNS Token still null after retries. FCM token generation may fail on iOS.');
+          }
+          // Return null early to avoid crashing on validation
+          return null;
         }
-        await Future.delayed(const Duration(seconds: 3));
       }
-      
-      String? apnsToken = await _firebaseMessaging.getAPNSToken();
-      if (apnsToken == null) {
-        if (kDebugMode) {
-           print('APNS Token still null after retries. FCM token generation may fail on iOS.');
-        }
-        // We still try to get the FCM token, but it might fail or return null
+      return await _firebaseMessaging.getToken();
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error getting FCM token: $e");
       }
+      return null;
     }
-    return await _firebaseMessaging.getToken();
   }
 
   Future<void> subscribeToTopic(String topic) async {
