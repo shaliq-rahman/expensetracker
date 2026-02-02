@@ -26,21 +26,55 @@ class UserService {
   }
 
   Future<String> uploadProfilePicture(File file, String userId) async {
-    print("DEBUG: Starting upload for user: $userId, File: ${file.path}");
+    print("DEBUG: STEP 1 - Check File");
+    if (!file.existsSync()) throw Exception("Local file missing");
+
     try {
-      Reference ref = _storage.ref().child('user_profile_images').child('$userId.jpg');
-      print("DEBUG: Storage Reference: ${ref.fullPath}");
+      print("DEBUG: STEP 2 - Check Bucket Access");
+      // Try to verify bucket connection
+      try {
+        await _storage.ref().child('test_connection').getDownloadURL().catchError((_) => "");
+        print("DEBUG: Connection seems alive (or at least reachable)");
+      } catch (e) {
+        print("DEBUG: Connection check note: $e");
+      }
+
+      print("DEBUG: STEP 3 - Prepare Ref");
+      // Simplify path to root to rule out folder issues
+      Reference ref = _storage.ref().child('profile_$userId.jpg'); 
+      print("DEBUG: Uploading to ${ref.fullPath} in bucket ${_storage.bucket}");
+
+      print("DEBUG: STEP 4 - Read Bytes");
+      final bytes = await file.readAsBytes();
+      print("DEBUG: Bytes read: ${bytes.length}");
+
+      if (bytes.isEmpty) throw Exception("Empty file bytes");
+
+      print("DEBUG: STEP 5 - Put Data");
+      UploadTask task = ref.putData(bytes);
       
-      // Simple upload without stream listener for reliability
-      await ref.putFile(file);
-      
-      // Get URL after upload completes
-      String downloadUrl = await ref.getDownloadURL();
-      print("DEBUG: Download URL retrieved: $downloadUrl");
-      return downloadUrl;
-    } catch (e) {
-      print("DEBUG: Error in uploadProfilePicture: $e");
-      rethrow;
+      task.snapshotEvents.listen((s) {
+         print('DEBUG: Progress ${s.bytesTransferred} / ${s.totalBytes} (State: ${s.state})');
+      }, onError: (e) {
+         print("DEBUG: Stream Error: $e");
+      });
+
+      print("DEBUG: STEP 6 - Await Task");
+      await task;
+      print("DEBUG: Task Complete. Final State: ${task.snapshot.state}");
+
+      if (task.snapshot.state == TaskState.success) {
+         print("DEBUG: STEP 7 - Get URL");
+         String url = await ref.getDownloadURL();
+         print("DEBUG: URL: $url");
+         return url;
+      } else {
+         throw Exception("Upload failed with state: ${task.snapshot.state}");
+      }
+    } catch (e, stack) {
+       print("DEBUG: EXCEPTION CAUGHT: $e");
+       print("DEBUG: Stack: $stack");
+       rethrow;
     }
   }
 }
